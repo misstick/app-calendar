@@ -1,0 +1,27 @@
+{
+  "name": "test-env-react",
+  "version": "0.0.0",
+  "description": "Example React Architecture",
+  "main": "build/all.js",
+  "dependencies": {
+    "react": "^0.13.1",
+    "moment": "^2.10.2"
+  },
+  "devDependencies": {
+    "browserify": "^6.2.0",
+    "envify": "^3.0.0",
+    "reactify": "^0.15.2",
+    "watchify": "^2.1.1"
+  },
+  "scripts": {
+    "start": "watchify -o js/all.js -v -d js/modules/*",
+    "build": "browserify . -t"
+  },
+  "author": "Noëlie Andrieu",
+  "browserify": {
+    "transform": [
+      "reactify",
+      "envify"
+    ]
+  }
+}
