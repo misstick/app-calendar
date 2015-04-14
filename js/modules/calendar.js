@@ -1,4 +1,5 @@
 var moment = require('moment');
+var React = require('react');
 
 var YEAR_STEP  = 6; // Get the MONTH_STEP weeks before/after the current date
 var WEEK_STEP = 4;  // Get the WEEK_STEP weeks before/after the current date
@@ -80,4 +81,29 @@ Le scroll met à jour les dates à charger
 */
 
 
+
+var Calendar = React.createClass({
+
+  // getInitialState: function() {
+  //   return getTodoState();
+  // },
+
+  componentDidMount: function() {
+      
+  },
+
+  componentWillUnmount: function() {
+      
+  },
+
+  /**
+   * @return {object}
+   */
+  render: function() {
+      return (<div>PLOP</div>)
+  }
+
+});
+
+module.exports = Calendar;
 

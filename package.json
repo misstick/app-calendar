@@ -14,7 +14,7 @@
     "watchify": "^2.1.1"
   },
   "scripts": {
-    "start": "watchify -o js/all.js -v -d js/modules/*",
+    "start": "watchify -o js/all.js -v -d js/app.js",
     "build": "browserify . -t"
   },
   "author": "Noëlie Andrieu",
