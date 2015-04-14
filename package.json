@@ -2,7 +2,7 @@
   "name": "test-env-react",
   "version": "0.0.0",
   "description": "Example React Architecture",
-  "main": "build/all.js",
+  "main": "js/all.js",
   "dependencies": {
     "react": "^0.13.1",
     "moment": "^2.10.2"
