@@ -4,11 +4,19 @@ var moment = require('moment');
 var _ = require('underscore');
 var React = require('react');
 
+// @FIXME : DOESNT WORK ?!
+moment.locale('fr');
+console.log(moment(1316116057189).fromNow());
+
 var YEAR_STEP  = 6; // Get the MONTH_STEP weeks before/after the current date
 var WEEK_STEP = 1;  // Get the WEEK_STEP weeks before/after the current date
 
 var DATE_FORMAT_STORE = "DD-MM-YYYY";
-var DATE_FORMAT_COMPARE = "X";
+var DATE_FORMAT_FULL = "dddd D MMMM YYYY";
+
+var get_full_date = function(timestamp) {
+    return moment(this.state).format(DATE_FORMAT_FULL);
+}
 
 var _get_period = function(scope, timestamp) {
     var current, min, max;
@@ -41,23 +49,18 @@ var _range_weeks = function(min, max) {
     var end = moment().week(max).endOf("month");
     
     var _date = start;
-    while (_date.format(DATE_FORMAT_COMPARE) <= end.format(DATE_FORMAT_COMPARE)) {
-        days.push(_date.format(DATE_FORMAT_STORE));
+    while (moment(_date).isBefore(end) || moment(_date).isSame(end)) {
+        days.push(_date.valueOf());
         _date = _date.add(1, "days");
     }
     return days;
 }
 
-var _get_data = function(scope, timestamp) {
-    if (timestamp == undefined) {
-        var timestamp = new Date();
-    }
-    var period = _get_period(scope, timestamp);
-    var days = _range_weeks(period.min, period.max);
-    return {
-        period: period,
-        days: days
-    };
+var _get_data = function(scope, data) {
+    var result = data || {date: new Date()};
+    result.weeks = _get_period(scope, result.date);
+    result.days = _range_weeks(result.weeks.min, result.weeks.max);
+    return result;
 }
 
 
@@ -92,9 +95,11 @@ Le scroll met à jour les dates à charger
 
 var Calendar = React.createClass({
 
-  // getInitialState: function() {
-  //   return getTodoState();
-  // },
+  getInitialState: function() {
+      return {
+          date: moment().valueOf()
+      };
+  },
 
   componentDidMount: function() {
       
@@ -105,7 +110,7 @@ var Calendar = React.createClass({
   },
 
   render: function() {
-      var props = _get_data("week");
+      var props = _get_data("week", this.state);
       return (
           <div data-view="calendar-week-view" className="main-view">
               <nav role="navigation">
@@ -120,65 +125,54 @@ var Calendar = React.createClass({
 });
 
 
+
 Calendar.Menu = React.createClass({
-    render: function() {return (
-        <table data-view="calendar-menu">
-            <thead>
-                <tr>
-                    <th id="monday-cell">
-                        L<span className="ellipsis">undi</span>
-                    </th>
-                    <th id="tuesday-cell">
-                        M<span className="ellipsis">ardi</span>
-                    </th>
-                    <th id="wednesday-cell">
-                        M<span className="ellipsis">ercredi</span>
-                    </th>
-                    <th id="thursday-cell">
-                        J<span className="ellipsis">eudi</span>
-                    </th>
-                    <th id="friday-cell">
-                        V<span className="ellipsis">endredi</span>
-                    </th>
-                    <th id="saturday-cell">
-                        S<span className="ellipsis">amedi</span>
-                    </th>
-                    <th id="sunday-cell">
-                        D<span className="ellipsis">imanche</span>
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td headers="monday-cell">
-                        <span className="active">6</span>
-                    </td>
-                    <td headers="tuesday-cell">
-                        <span>7</span>
-                    </td>
-                    <td headers="wednesday-cell">
-                        <span>8</span>
-                    </td>
-                    <td headers="thursday-cell">
-                        <span>9</span>
-                    </td>
-                    <td headers="friday-cell">
-                        <span>10</span>
-                    </td>
-                    <td headers="saturday-cell">
-                        <span>11</span>
-                    </td>
-                    <td headers="sunday-cell">
-                        <span>12</span>
-                    </td>
-                </tr>
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colSpan="7"><h1>Lundi 6 Avril 2015</h1></td>
-                </tr>
-            </tfoot>
-        </table>
+    render: function() {
+        
+        // @FIXME: est-ce qu'il faut afficher le header pour tous les jours ?
+        // Parceque : 1 tableau pour chaque semaine
+        
+        // @FIXME : n'affiche pas les bons jours (tjrs la date courante)
+        
+        var header = this.props.days.map(function(day) {
+            var weekday = moment(day.timestamp).format("dd");
+            var id = weekday + "-cell";
+            return (
+                <th id={id}>{weekday}</th>
+            );
+        });
+        
+        var content = this.props.days.map(function(day) {
+            var weekday = moment(day.timestamp).format("dddd");
+            var id = weekday + "-cell";
+            var date = moment(day.timestamp).date();
+            return (
+                <td headers="wednesday-cell">
+                    <span>{date}</span>
+                </td>
+            );
+        })
+        
+        var footer = get_full_date(this.props.current);
+        
+        return (
+            <table data-view="calendar-menu">
+                <thead>
+                    <tr>
+                        {header}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        {content}
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colSpan="7"><h1>{footer}</h1></td>
+                    </tr>
+                </tfoot>
+            </table>
         );
     }
 });
@@ -186,32 +180,25 @@ Calendar.Menu = React.createClass({
 
 Calendar.Breadcrumb = React.createClass({
   render: function() {
+      var month = moment(this.props.date).format("MMMM");
       return (
-          <a href="#" className="breadcrumb">Avril</a>
+          <a href="#" className="breadcrumb">{month}</a>
       );
   }
 });
 
 Calendar.Day = React.createClass({
   render: function() {
-      
-      // @TODO : générer ici 24 lignes 
-      // soit 1 pour chaque heure
-      
-      console.log("Calendar.Day", this.props);
-      
-      var content = [];
-      var cmpt = 24;
-      
-      content = _.map(_.range(1, 25), function(hour) {
-          // @TODO : transformer l'heure (cf moment)
-          // 1 => 01:00 
+      var day = this.props.day;
+      var hours = _.range(1, 25);
+      var content = hours.map(function(hour) {
+          var timestamp = day + hour * 60 * 60 * 1000;
           return (
-              <Calendar.Hour value={hour} />
+              <Calendar.Hour value={timestamp} />
           );
       });
       return (
-          <table  data-day="lundi">
+          <table  data-timestamp={day}>
               <tbody>
                   {content}
               </tbody>
@@ -222,40 +209,42 @@ Calendar.Day = React.createClass({
 
 Calendar.Hour = React.createClass({
   render: function() {
-      
-      console.log("Calendar.Hour", this.props);
+      var label = moment(this.props.value).format("HH:mm");
       return (
           <tr>
-              <th scope="row"><span>00:00</span></th>
+              <th scope="row">{label}</th>
               <td></td>
           </tr>
       );
   }
 });
 
-// @TODO : récupérer le numéro de la semaine
-// @props.week
 Calendar.Week = React.createClass({
-  render: function() {
-      
-      console.log("Calendar.Week", this.props);
-      
-      // @FIXME : les données récupérées sont fausses
 
+    // @TODO : mettre un timeout pour changer l'heure a chaque fois
+    // mais uniquement lorsque cette vue est visible 
+    // donc en fonction du router
+    getInitialState: function() {
+        return {
+            "time": "02h15"
+        };
+    },
+    
+    render: function() {
       var days = this.props.days.map(function(day, index) {
           return (
-              <Calendar.Day value={day} />
+              <Calendar.Day day={day} />
           );
       });
       return (
           <div data-view="week-view" className="scroll-view" style={{height: 300}}>
               <div id="current-timer" style={{top: 200, left: 0}}>
-                  <span>02h15</span>
+                  {this.state}
               </div>
               { days }
           </div>
       );
-  }
+    }
 });
 
 
