@@ -130,8 +130,8 @@ var Calendar = React.createClass({
               <nav role="navigation">
                   <Calendar.Breadcrumb {...props} />
                   <Calendar.Menu {...props} />
-                  <Calendar.Week {...props} />
               </nav>
+            <Calendar.Week {...props} />
           </div>
       );
   }
@@ -144,6 +144,7 @@ Calendar.Menu = React.createClass({
     render: function() {
         
         // @FIXME: est-ce qu'il faut afficher le header pour tous les jours ?
+        // dans le cas où l'on charge plusieurs semaine
         // Parceque : 1 tableau pour chaque semaine
         
         var props = [];

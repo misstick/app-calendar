@@ -168,16 +168,20 @@
             border-radius: 14px;
         }
         
-        
-        [data-view="week-view"] {
-            width: 100%;
+        [data-view="calendar-week-view"] .scroller {
+            width: 700%;
+        }
+        .scroller [data-view="day-view"] {
+            width: 14.286%;
             overflow: auto;
             position: relative;
+            float: left;
         }
-        [data-view="week-view"] th[scope=row] {
+        [data-view="day-view"] th[scope=row] {
             color: #aaa;
             font-weight: normal;
             font-size: 0.9em;
+            width: 20%;
         }
 /* 
         (var)line-height = 1em;
@@ -185,38 +189,38 @@
         th span: margin: line-height * -1.5
         table: margin: 2*line-height line-height 0
 */
-        [data-view="week-view"] table {
-            width: 700%;
-            margin: 2em 1em 0;
+        [data-view="day-view"] table {
             border-collapse: collapse;
+            width: 100%;
+            margin-top: 2em;
         }
-        [data-view="week-view"] th[scope=row] span {
+        [data-view="day-view"] th[scope=row] span {
             margin: -1.5em 0.5em 0.5em;
             display: block;
         }
-        [data-view="week-view"] td {
+        [data-view="day-view"] td {
+            position: relative;
             border-top: solid 1px #ccc;
-            width: 14%;
             padding: 1em;
         }
-        [data-view="week-view"] .event {
+        [data-view="day-view"] .event {
             position: absolute;
             background: rgba(0, 100, 255, 0.7);
             border-left: solid 1px blue;
             font-size: 0.9em;
             padding: 0.5em;
-            margin-left: 20%;
-            width: 80%;
+            left: 0;
+            right: 0;
         }
-        [data-view="week-view"] .event h4,
-        [data-view="week-view"] .event address  {
+        [data-view="day-view"] .event h4,
+        [data-view="day-view"] .event address  {
             padding: 0;
             margin: 0;
         }
 /*
             ici, (var)border-left: 6em
         */
-        [data-view="week-view"] #current-timer {
+        [data-view="day-view"] #current-timer {
             font-size: 0.8em;
             border-bottom: solid 1px red;
             color: red;
@@ -225,7 +229,7 @@
             height: 1em;
             box-sizing: border-box;
         }
-        [data-view="week-view"] #current-timer span {
+        [data-view="day-view"] #current-timer span {
             font-weight: bold;
             display: inline-block;
             height: 1em;
