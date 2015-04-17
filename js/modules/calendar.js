@@ -132,24 +132,31 @@ Calendar.Menu = React.createClass({
         // @FIXME: est-ce qu'il faut afficher le header pour tous les jours ?
         // Parceque : 1 tableau pour chaque semaine
         
-        // @FIXME : n'affiche pas les bons jours (tjrs la date courante)
+        var props = [];
         
-        var header = this.props.days.map(function(day) {
-            var weekday = moment(day.timestamp).format("dd");
-            var id = weekday + "-cell";
+        var get_props = function(data) {
+            var weekday = moment(data.timestamp).format("dddd");
+            return {
+                id: weekday.toLowerCase() + "-cell",
+                weekday: weekday,
+                weekday_small: moment(data.timestamp).format("dd"),
+                date: moment(data.timestamp).date()
+            };
+        }
+        
+        
+        var header = this.props.days.map(function(data, indice) {
+            var _props = get_props(data);
+            props.push(_props);
             return (
-                <th id={id}>{weekday}</th>
+                <th id={_props.id}>{_props.weekday}</th>
             );
         });
         
-        var content = this.props.days.map(function(day) {
-            var weekday = moment(day.timestamp).format("dddd");
-            var id = weekday + "-cell";
-            var date = moment(day.timestamp).date();
+        var content = this.props.days.map(function(data, indice) {
+            var _props = props[indice];
             return (
-                <td headers="wednesday-cell">
-                    <span>{date}</span>
-                </td>
+                <td headers={_props.id}>{_props.date}</td>
             );
         })
         
