@@ -15,52 +15,66 @@ var DATE_FORMAT_STORE = "DD-MM-YYYY";
 var DATE_FORMAT_FULL = "dddd D MMMM YYYY";
 
 var get_full_date = function(timestamp) {
-    return moment(this.state).format(DATE_FORMAT_FULL);
+    return moment(timestamp).format(DATE_FORMAT_FULL);
 }
 
-var _get_period = function(scope, timestamp) {
-    var current, min, max;
-    switch(scope) {
-        case "week":
-            current = moment(timestamp).week();
-            min = current - WEEK_STEP;
-            max = current + WEEK_STEP;
-            break;
-        case "year":
-            current = moment(timestamp).week();
-            min = current - YEAR_STEP;
-            max = current + YEAR_STEP;
-            break;
-        default:
-            break;
-    }
-    return {
-        min: min,
-        max: max
-    };
-}
+// var _get_period = function(scope, timestamp) {
+//     var current, min, max;
+//     switch(scope) {
+//         case "week":
+//             current = moment(timestamp).week();
+//             min = current - WEEK_STEP;
+//             max = current + WEEK_STEP;
+//             break;
+//         case "year":
+//             current = moment(timestamp).week();
+//             min = current - YEAR_STEP;
+//             max = current + YEAR_STEP;
+//             break;
+//         default:
+//             break;
+//     }
+//     return {
+//         min: min,
+//         max: max
+//     };
+// }
 
-// @FIXME : les jours récupérés sont tous les jours de la semaine
-// Ne récupérer que les jours des semaines comprises entre
-// period.min et period.max
-var _range_weeks = function(min, max) {
-    var days = [];
-    var start = moment().week(min).startOf("month");
-    var end = moment().week(max).endOf("month");
+// // @FIXME : les jours récupérés sont tous les jours de la semaine
+// // Ne récupérer que les jours des semaines comprises entre
+// // period.min et period.max
+// var _range_weeks = function(min, max) {
+//     var days = [];
+//     var start = moment().week(min).startOf("month");
+//     var end = moment().week(max).endOf("month");
+//
+//     var _date = start;
+//     while (moment(_date).isBefore(end) || moment(_date).isSame(end)) {
+//         days.push(_date.valueOf());
+//         _date = _date.add(1, "days");
+//     }
+//     return days;
+// }
+
+var get_calendar_days = function(scope, data) {
     
-    var _date = start;
-    while (moment(_date).isBefore(end) || moment(_date).isSame(end)) {
-        days.push(_date.valueOf());
-        _date = _date.add(1, "days");
+    var data = data || {start: new Date()};
+    var days = [];
+    // result.weeks = _get_period(scope, result.date);
+    // result.days = _range_weeks(result.weeks.min, result.weeks.max);
+    
+    var first_day = moment(day).startOf(scope);
+    var last_day = moment(day).endOf(scope);
+    
+    var day = first_day;
+    while(day.isBefore(last_day) || day.isSame(last_day)) {
+        days.push(day.valueOf());
+        console.log(day.valueOf(), get_full_date(day.valueOf()))
+        day = day.add(1, "days");
     }
-    return days;
-}
-
-var _get_data = function(scope, data) {
-    var result = data || {date: new Date()};
-    result.weeks = _get_period(scope, result.date);
-    result.days = _range_weeks(result.weeks.min, result.weeks.max);
-    return result;
+    return _.extend(data, {
+        days: days
+    });
 }
 
 
@@ -97,7 +111,7 @@ var Calendar = React.createClass({
 
   getInitialState: function() {
       return {
-          date: moment().valueOf()
+          start: moment().valueOf()
       };
   },
 
@@ -110,7 +124,7 @@ var Calendar = React.createClass({
   },
 
   render: function() {
-      var props = _get_data("week", this.state);
+      var props = get_calendar_days("week", this.state);
       return (
           <div data-view="calendar-week-view" className="main-view">
               <nav role="navigation">
@@ -134,13 +148,13 @@ Calendar.Menu = React.createClass({
         
         var props = [];
         
-        var get_props = function(data) {
-            var weekday = moment(data.timestamp).format("dddd");
+        var get_props = function(timestamp) {
+            var weekday = moment(timestamp).format("dddd");
             return {
                 id: weekday.toLowerCase() + "-cell",
                 weekday: weekday,
-                weekday_small: moment(data.timestamp).format("dd"),
-                date: moment(data.timestamp).date()
+                weekday_small: moment(timestamp).format("dd"),
+                date: moment(timestamp).date()
             };
         }
         
@@ -149,7 +163,7 @@ Calendar.Menu = React.createClass({
             var _props = get_props(data);
             props.push(_props);
             return (
-                <th id={_props.id}>{_props.weekday}</th>
+                <th id={_props.id}>{_props.weekday_small}</th>
             );
         });
         
@@ -243,6 +257,8 @@ Calendar.Week = React.createClass({
               <Calendar.Day day={day} />
           );
       });
+      
+      //@TODO : calculer la position du timer
       return (
           <div data-view="week-view" className="scroll-view" style={{height: 300}}>
               <div id="current-timer" style={{top: 200, left: 0}}>
