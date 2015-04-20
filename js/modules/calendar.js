@@ -79,6 +79,17 @@ var get_calendar_days = function(scope, data) {
     });
 }
 
+var _get_day_status = function(index, props) {
+    var result = [];
+    var _current_date = moment(props.current).weekday();
+    if (index == _current_date) {
+        result.push("current");
+    }
+    if (index == props.date) {
+        result.push("active");
+    }
+    return result.join(" ");
+}
 
 /*
 
@@ -113,8 +124,8 @@ var Calendar = React.createClass({
 
     getInitialState: function() {
         return {
-            current: null,
-            day: 0
+            current: null,  // Current Day
+            date: 3         // Day visible into the view (scrollTO that day)
         };
     },
 
@@ -189,24 +200,23 @@ Calendar.Week = React.createClass({
     },
     
     render: function() {
-        var _current_weekday = moment(this.props.current).weekday();
         var days = this.props.days.map(function(day, index) {
-            var _is_current = _current_weekday == index;
+            var _status = _get_day_status(index, this.props);
             return (
-                <Calendar.Week.Day day={day} current={_is_current} />
+                <Calendar.Week.Day day={day} status={_status} />
             );
         }.bind(this));
 
         //@TODO : calculer la position du timer
         return (
-        <div data-view="week-view" 
-                className="scroll-view" 
-                style={{height: 300}} 
-                onScroll={_.debounce(this._handleScroll, SCROLL_DEBOUNCE)}>
-            <div className="scroller" style={{ width: "700%" }}>
-                { days }
+            <div data-view="week-view" 
+                    className="scroll-view" 
+                    style={{height: 300}} 
+                    onScroll={_.debounce(this._handleScroll, SCROLL_DEBOUNCE)}>
+                <div className="scroller" style={{ width: "700%" }}>
+                    { days }
+                </div>
             </div>
-        </div>
         );
     }
 });
@@ -220,30 +230,28 @@ Calendar.Week.Menu = React.createClass({
         var _current_date = this.current;
         var props = [];
         
-        var get_props = function(timestamp) {
+        var get_props = function(timestamp, index) {
             var weekday = moment(timestamp).format("dddd");
-            var is_current = moment(timestamp).weekday() == moment(_current_date).weekday();
             return {
                 id: weekday.toLowerCase() + "-cell",
                 weekday: weekday,
                 weekday_small: moment(timestamp).format("dd"),
                 date: moment(timestamp).date(),
-                is_current: is_current,
-                className: is_current ?  "current" : ""
+                className: _get_day_status(index, this.props)
             };
-        };
+        }.bind(this);
         
         
-        var header = this.props.days.map(function(data, indice) {
-            var _props = get_props(data);
+        var header = this.props.days.map(function(data, index) {
+            var _props = get_props(data, index);
             props.push(_props);
             return (
                 <th id={_props.id} className={_props.className}>{_props.weekday_small}</th>
             );
         });
         
-        var content = this.props.days.map(function(data, indice) {
-            var _props = props[indice];
+        var content = this.props.days.map(function(data, index) {
+            var _props = props[index];
             return (
                 <td headers={_props.id}><span className={_props.className}>{_props.date}</span></td>
             );
@@ -318,7 +326,7 @@ Calendar.Week.Day = React.createClass({
         })(this.props, this.state);
         
         return (
-          <div data-view="day-view">
+          <div data-view="day-view" className={this.props.status}>
             {timer}
               <table data-timestamp={day}>
                   <tbody>
