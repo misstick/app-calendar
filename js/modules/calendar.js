@@ -221,7 +221,7 @@ Calendar.Day = React.createClass({
     
     render: function() {
         var day = this.props.day;
-        var hours = _.range(1, 25);
+        var hours = _.range(0, 25);
         
         var content = hours.map(function(hour) {
           var timestamp = day + hour * 60 * 60 * 1000;
@@ -259,7 +259,7 @@ Calendar.Hour = React.createClass({
       var label = moment(this.props.value).format("HH:mm");
       return (
           <tr>
-              <th scope="row">{label}</th>
+              <th scope="row"><span>{label}</span></th>
               <td></td>
           </tr>
       );
