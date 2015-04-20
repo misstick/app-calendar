@@ -125,7 +125,7 @@ var Calendar = React.createClass({
     getInitialState: function() {
         return {
             current: null,  // Current Day
-            date: 3         // Day visible into the view (scrollTO that day)
+            date: 2         // Day visible into the view (scrollTO that day)
         };
     },
 
@@ -135,13 +135,35 @@ var Calendar = React.createClass({
             "current": _today
         });
     },
-
+    
     componentDidMount: function() {
-        
+        this._displayScroll();
     },
 
     componentWillUnmount: function() {
         
+    },
+    
+    componentDidUpdate: function() {
+        this._displayScroll();
+    },
+    
+    _displayScroll: function() {
+        // Force ScrollValue
+        var el = React.findDOMNode(this);
+        var content = React.findDOMNode(this.refs["Week"]);
+        var scroll_value = this.state.date * el.offsetWidth;
+        content.scrollLeft = scroll_value;
+    },
+    
+    _handleScroll: function() {
+        var content = React.findDOMNode(this.refs["Week"]);
+        
+        // @TODO : utiliser l'entier descendant pour le scroll vers la gauche
+        var date = Math.ceil(content.scrollLeft / content.offsetWidth);
+        this.setState({
+            "date": date
+        });
     },
 
     render: function() {
@@ -152,7 +174,7 @@ var Calendar = React.createClass({
                     <Calendar.Breadcrumb {...props} />
                     <Calendar.Week.Menu {...props} />
                 </nav>
-                <Calendar.Week {...props} />
+                <Calendar.Week {...props} ref="Week" onScroll={_.debounce(this._handleScroll, SCROLL_DEBOUNCE)} />
             </div>
         );
     }
@@ -169,36 +191,6 @@ Calendar.Breadcrumb = React.createClass({
 });
 
 Calendar.Week = React.createClass({
-    
-    // getDefaultProps: function() {
-    //   return {
-    //       "scrollLeft": 0
-    //   };
-    // },
-    
-    // @TODO : calculer le jour par défaut
-    // avant le rendering "componentWillMount"
-    // dans le cas d'un accés à partir de la vue "Mois" ou "Année"
-    _handleScroll: function() {
-        
-        // @TODO : stocker les coordonnées de scroll
-        // et définir le sens du scroll
-        // pour cibler le nom de l'événement
-        var el = React.findDOMNode(this);
-        
-        var _scrollChange = el.offsetWidth / 3;
-        var _scrollLeft = el.scrollLeft % el.offsetWidth;
-        var _gotoNextDay = _scrollLeft >= _scrollChange;
-        
-        // @TODO : faire le test (si nécessaire)
-        // var _gotoPrevDay = ??? test ???;
-        
-        console.log("day", _scrollLeft)
-        // this.setState({
-        //     "day": day
-        // });
-    },
-    
     render: function() {
         var days = this.props.days.map(function(day, index) {
             var _status = _get_day_status(index, this.props);
@@ -206,14 +198,21 @@ Calendar.Week = React.createClass({
                 <Calendar.Week.Day day={day} status={_status} />
             );
         }.bind(this));
+        
+        var styles = {
+            "width": "700%"
+        }
 
-        //@TODO : calculer la position du timer
+        // @TODO : calculer la position du timer
+        // @TODO : affecter l'événement avec addEventListener
         return (
-            <div data-view="week-view" 
+            <div data-view="week-view"
                     className="scroll-view" 
                     style={{height: 300}} 
-                    onScroll={_.debounce(this._handleScroll, SCROLL_DEBOUNCE)}>
-                <div className="scroller" style={{ width: "700%" }}>
+                    onScroll={this.props.onScroll}>
+                <div className="scroller" 
+                    ref="Scroller"
+                    style={styles}>
                     { days }
                 </div>
             </div>

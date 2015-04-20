@@ -176,7 +176,7 @@
         }
         
         [data-view="calendar-week-view"] .scroller {
-            width: 700%;
+            overflow: hidden;
         }
         .scroller [data-view="day-view"] {
             width: 14.286%;
