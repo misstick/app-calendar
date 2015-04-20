@@ -13,9 +13,16 @@
             box-sizing: border-box;
         }
         
-        span.active {
+        span.current {
+            color: red;
+        }
+        span.current.active {
             border-color: red;
-            background: red;
+            background-color: red;
+        }
+        span.active {
+            border-color: black;
+            background-color: black;
             color: white;
         }
         .week-end,

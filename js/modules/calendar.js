@@ -222,12 +222,14 @@ Calendar.Week.Menu = React.createClass({
         
         var get_props = function(timestamp) {
             var weekday = moment(timestamp).format("dddd");
+            var is_current = moment(timestamp).weekday() == moment(_current_date).weekday();
             return {
                 id: weekday.toLowerCase() + "-cell",
                 weekday: weekday,
                 weekday_small: moment(timestamp).format("dd"),
                 date: moment(timestamp).date(),
-                is_current: moment(timestamp).weekday() == moment(_current_date).weekday()
+                is_current: is_current,
+                className: is_current ?  "current" : ""
             };
         };
         
@@ -235,17 +237,15 @@ Calendar.Week.Menu = React.createClass({
         var header = this.props.days.map(function(data, indice) {
             var _props = get_props(data);
             props.push(_props);
-            var className = _props.is_current ? "active" : "";
             return (
-                <th id={_props.id} className={className}>{_props.weekday_small}</th>
+                <th id={_props.id} className={_props.className}>{_props.weekday_small}</th>
             );
         });
         
         var content = this.props.days.map(function(data, indice) {
             var _props = props[indice];
-            var className = _props.is_current ? "active" : "";
             return (
-                <td headers={_props.id}><span className={className}>{_props.date}</span></td>
+                <td headers={_props.id}><span className={_props.className}>{_props.date}</span></td>
             );
         })
         
@@ -285,8 +285,8 @@ Calendar.Week.Day = React.createClass({
     },
   
     componentDidMount: function() {
-        var _isCurrent = this.props.current;
-        if (_isCurrent) {
+        var _is_current = this.props.current;
+        if (_is_current) {
             // @TODO : aller au moment courant
             // Scoller en hauteur
             // Pour aller jusqu'au Timer
