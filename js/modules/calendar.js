@@ -189,25 +189,25 @@ Calendar.Week = React.createClass({
     },
     
     render: function() {
-      var days = this.props.days.map(function(day, index) {
-          // var _isCurrent = this.state.day == index;
-          // current={_isCurrent}
-          return (
-              <Calendar.Week.Day day={day} />
-          );
-      }.bind(this));
-      
-      //@TODO : calculer la position du timer
-      return (
-          <div data-view="week-view" 
-                  className="scroll-view" 
-                  style={{height: 300}} 
-                  onScroll={_.debounce(this._handleScroll, SCROLL_DEBOUNCE)}>
-              <div className="scroller" style={{ width: "700%" }}>
-                  { days }
-              </div>
-          </div>
-      );
+        var _current_weekday = moment(this.props.current).weekday();
+        var days = this.props.days.map(function(day, index) {
+            var _is_current = _current_weekday == index;
+            return (
+                <Calendar.Week.Day day={day} current={_is_current} />
+            );
+        }.bind(this));
+
+        //@TODO : calculer la position du timer
+        return (
+        <div data-view="week-view" 
+                className="scroll-view" 
+                style={{height: 300}} 
+                onScroll={_.debounce(this._handleScroll, SCROLL_DEBOUNCE)}>
+            <div className="scroller" style={{ width: "700%" }}>
+                { days }
+            </div>
+        </div>
+        );
     }
 });
 
@@ -311,7 +311,7 @@ Calendar.Week.Day = React.createClass({
         var timer = (function(props, state) {
             var content = [];
             var style = {top: 200, left: 0};
-            if (props.is_current) {
+            if (props.current) {
                 content.push(<div id="current-timer" style={style}>{state}</div>);
             }
             return content;
