@@ -69,7 +69,6 @@ var get_calendar_days = function(scope, data) {
     var day = first_day;
     while(day.isBefore(last_day) || day.isSame(last_day)) {
         days.push(day.valueOf());
-        console.log(day.valueOf(), get_full_date(day.valueOf()))
         day = day.add(1, "days");
     }
     return _.extend(data, {
@@ -210,23 +209,49 @@ Calendar.Breadcrumb = React.createClass({
 });
 
 Calendar.Day = React.createClass({
-  render: function() {
-      var day = this.props.day;
-      var hours = _.range(1, 25);
-      var content = hours.map(function(hour) {
+
+    // @TODO : mettre un timeout pour changer l'heure a chaque fois
+    // mais uniquement lorsque cette vue est visible 
+    // donc en fonction du router
+    getInitialState: function() {
+        return {
+            "time": "02h15"
+        };
+    },
+    
+    render: function() {
+        var day = this.props.day;
+        var hours = _.range(1, 25);
+        
+        var content = hours.map(function(hour) {
           var timestamp = day + hour * 60 * 60 * 1000;
           return (
               <Calendar.Hour value={timestamp} />
           );
-      });
-      return (
-          <table  data-timestamp={day}>
-              <tbody>
-                  {content}
-              </tbody>
-          </table>
-      );
-  }
+        });
+        
+        // @TODO :faire une vue à la place
+        // y inclure le state (n'appartient à à cette vue)
+        var timer = (function(props, state) {
+            var content = [];
+            var style = {top: 200, left: 0};
+            if (props.is_current) {
+                content.push(<div id="current-timer" style={style}>{state}</div>);
+            }
+            return content;
+        })(this.props, this.state);
+        
+        return (
+          <div data-view="day-view">
+            {timer}
+              <table data-timestamp={day}>
+                  <tbody>
+                      {content}
+                  </tbody>
+              </table>
+        </div>
+        );
+    }
 });
 
 Calendar.Hour = React.createClass({
@@ -242,15 +267,6 @@ Calendar.Hour = React.createClass({
 });
 
 Calendar.Week = React.createClass({
-
-    // @TODO : mettre un timeout pour changer l'heure a chaque fois
-    // mais uniquement lorsque cette vue est visible 
-    // donc en fonction du router
-    getInitialState: function() {
-        return {
-            "time": "02h15"
-        };
-    },
     
     render: function() {
       var days = this.props.days.map(function(day, index) {
@@ -262,10 +278,9 @@ Calendar.Week = React.createClass({
       //@TODO : calculer la position du timer
       return (
           <div data-view="week-view" className="scroll-view" style={{height: 300}}>
-              <div id="current-timer" style={{top: 200, left: 0}}>
-                  {this.state}
+              <div className="scroller" style={{ width: "700%" }}>
+                  { days }
               </div>
-              { days }
           </div>
       );
     }
