@@ -157,12 +157,15 @@ var Calendar = React.createClass({
     },
     
     _handleScroll: function() {
+        var el = React.findDOMNode(this);
         var content = React.findDOMNode(this.refs["Week"]);
         
-        // @TODO : utiliser l'entier descendant pour le scroll vers la gauche
-        var date = Math.ceil(content.scrollLeft / content.offsetWidth);
+        // Get the greater value less than current value when we scroll to the left
+        var date = content.scrollLeft / content.offsetWidth;
+        var _func = (date < this.state.date) ? "floor" : "ceil";
+
         this.setState({
-            "date": date
+            "date": Math[_func](date)
         });
     },
 
