@@ -78,11 +78,10 @@ var get_calendar_days = function(scope, data) {
 
 var _get_day_status = function(index, props) {
     var result = [];
-    var _current_date = moment(props.current).weekday();
-    if (index == _current_date) {
+    if (index == moment(props.current).weekday()) {
         result.push("current");
     }
-    if (index == props.date) {
+    if (index == moment(props.active).weekday()) {
         result.push("active");
     }
     return result.join(" ");
@@ -130,19 +129,20 @@ var Calendar = React.createClass({
     getInitialState: function() {
         return {
             current: null,  // Current Day
-            date: 2         // Day visible into the view (scrollTO that day)
+            active: null      // Day visible into the view (scrollTO that day)
         };
     },
 
     componentWillMount: function() {
         var _today = moment().valueOf();
         this.setState({
-            "current": _today
+            "current": moment().valueOf(),
+            "active": moment().endOf("week").valueOf()
         });
     },
     
     componentDidMount: function() {
-        this._displayScroll();
+        // this._displayScroll();
     },
 
     componentWillUnmount: function() {
@@ -153,34 +153,42 @@ var Calendar = React.createClass({
         this._displayScroll();
     },
     
-    _set_date: function(value) {
-        // Get the greater value less than current value when we scroll to the left
-        var _func = (value < this.state.date) ? "floor" : "ceil";
+    _set_active: function(data) {
+        var value;
+        if (data.timestamp) {
+            value = data.timestamp;
+        } else if (data.weekday) {
+            value = moment(this.state.active).weekday(data.weekday).valueOf();
+        }
+        console.log("_set_active", _get_full_date(value))
         this.setState({
-            "date": Math[_func](value)
+            "active": value
         });
     },
-    
+
+    // Force Scroll
     _displayScroll: function() {
-        // Force ScrollValue
         var el = React.findDOMNode(this);
         var content = React.findDOMNode(this.refs["Week"]);
-        var scroll_value = this.state.date * el.offsetWidth;
-        content.scrollLeft = scroll_value;
+        var weekday = moment(this.state.active).weekday().valueOf();
+        console.log("_displayScroll", _get_full_date(this.state.active), weekday);
+        content.scrollLeft = weekday * el.offsetWidth;
     },
     
     _handleScroll: function() {
-        var el = React.findDOMNode(this);
-        var content = React.findDOMNode(this.refs["Week"]);
-        
-        // Get the greater value less than current value when we scroll to the left
-        var date = content.scrollLeft / content.offsetWidth;
-        this._set_date(date);
+        // var content = React.findDOMNode(this.refs["Week"]);
+        // var weekday_tmp = content.scrollLeft / content.offsetWidth;
+        // var weekday = moment(this.state.active).weekday().valueOf();
+        //
+        // // Get the greater value less than current value when we scroll to the left
+        // var _floor = (weekday_tmp < weekday) ? "floor" : "ceil";
+        // console.log("_handleScroll", { weekday: Math[_floor](weekday_tmp)})
+        // this._set_active({ weekday: Math[_floor](weekday_tmp)});
     },
     
     _handleClickDate: function(event, data) {
-        var date = moment(data.timestamp).format("d");
-        this._set_date(date);
+        console.log("_handleClickDate", _get_full_date(data.timestamp))
+        this._set_active(data);
     },
 
     render: function() {
@@ -200,7 +208,7 @@ var Calendar = React.createClass({
 
 Calendar.Breadcrumb = React.createClass({
   render: function() {
-      var month = moment(this.props.date).format("MMMM");
+      var month = moment(this.props.active).format("MMMM");
       return (
           <a href="#" className="breadcrumb">{month}</a>
       );
@@ -243,18 +251,15 @@ Calendar.Week.Menu = React.createClass({
             return {
                 timestamp: timestamp,
                 className: _get_day_status(index, this.props),
-                ref: _get_id(timestamp, "header")
+                ref: _get_id(timestamp, "header"),
+                onClick: this.props.onClickDate
             };
         }.bind(this);
         
         var header = this.props.days.map(function(timestamp, index) {
-            var _props = get_props(timestamp, index);
-            props.push(_props);
-            _.extend(_props, {
-                onClick: this.props.onClickDate
-            })
+            props.push(get_props(timestamp, index));
             return (
-                <Calendar.Week.Menu.Header {..._props} />
+                <Calendar.Week.Menu.Header {...props[index]} />
             );
         }.bind(this));
         
@@ -278,7 +283,7 @@ Calendar.Week.Menu = React.createClass({
                 </tbody>
                 <tfoot>
                     <tr>
-                        <Calendar.Week.Menu.Footer current={this.current} />
+                        <Calendar.Week.Menu.Footer active={this.props.active} />
                     </tr>
                 </tfoot>
             </table>
@@ -312,8 +317,9 @@ Calendar.Week.Menu.Date = React.createClass({
 
 Calendar.Week.Menu.Footer = React.createClass({
     render: function() {
+        console.log(this.props.active, _get_full_date(this.props.active))
         return (
-            <td colSpan="7"><h1>{_get_full_date(this.props.current)}</h1></td>
+            <td colSpan="7"><h1>{_get_full_date(this.props.active)}</h1></td>
         );
     }
 });
