@@ -142,7 +142,7 @@ var Calendar = React.createClass({
     },
     
     componentDidMount: function() {
-        // this._displayScroll();
+        this._displayScroll();
     },
 
     componentWillUnmount: function() {
@@ -160,7 +160,7 @@ var Calendar = React.createClass({
         } else if (data.weekday) {
             value = moment(this.state.active).weekday(data.weekday).valueOf();
         }
-        console.log("_set_active", _get_full_date(value))
+        // console.log("_set_active", _get_full_date(value), this.state.active)
         this.setState({
             "active": value
         });
@@ -171,10 +171,13 @@ var Calendar = React.createClass({
         var el = React.findDOMNode(this);
         var content = React.findDOMNode(this.refs["Week"]);
         var weekday = moment(this.state.active).weekday().valueOf();
-        console.log("_displayScroll", _get_full_date(this.state.active), weekday);
+        // console.log("_displayScroll", _get_full_date(this.state.active), weekday);
         content.scrollLeft = weekday * el.offsetWidth;
     },
     
+    // @FIXME : les événements se chevauchent
+    // vois si l'utilisation de lux avec le dispatcher
+    // ne résoudrait pas ce conflit
     _handleScroll: function() {
         // var content = React.findDOMNode(this.refs["Week"]);
         // var weekday_tmp = content.scrollLeft / content.offsetWidth;
@@ -182,12 +185,12 @@ var Calendar = React.createClass({
         //
         // // Get the greater value less than current value when we scroll to the left
         // var _floor = (weekday_tmp < weekday) ? "floor" : "ceil";
-        // console.log("_handleScroll", { weekday: Math[_floor](weekday_tmp)})
+        // console.log("_handleScroll", weekday, { weekday: Math[_floor](weekday_tmp)})
         // this._set_active({ weekday: Math[_floor](weekday_tmp)});
     },
     
     _handleClickDate: function(event, data) {
-        console.log("_handleClickDate", _get_full_date(data.timestamp))
+        // console.log("_handleClickDate", _get_full_date(data.timestamp))
         this._set_active(data);
     },
 
@@ -317,7 +320,6 @@ Calendar.Week.Menu.Date = React.createClass({
 
 Calendar.Week.Menu.Footer = React.createClass({
     render: function() {
-        console.log(this.props.active, _get_full_date(this.props.active))
         return (
             <td colSpan="7"><h1>{_get_full_date(this.props.active)}</h1></td>
         );
