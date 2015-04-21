@@ -137,7 +137,7 @@ var Calendar = React.createClass({
         var _today = moment().valueOf();
         this.setState({
             "current": moment().valueOf(),
-            "active": moment().endOf("week").valueOf()
+            "active": moment().weekday(2).valueOf()
         });
     },
     
@@ -328,18 +328,15 @@ Calendar.Week.Menu.Footer = React.createClass({
 
 Calendar.Week.Day = React.createClass({
 
-    // @TODO : mettre un timeout pour changer l'heure a chaque fois
-    // mais uniquement lorsque cette vue est visible 
-    // donc en fonction du router
     getInitialState: function() {
         return {
-            "time": "02h15"
+            scale: 25 // Num. of pixel per. hour
         };
     },
   
     componentDidMount: function() {
-        var _is_current = this.props.current;
-        if (_is_current) {
+        var is_active = this.is_active();
+        if (is_active) {
             // @TODO : aller au moment courant
             // Scoller en hauteur
             // Pour aller jusqu'au Timer
@@ -348,51 +345,90 @@ Calendar.Week.Day = React.createClass({
         }
     },
     
+    is_active: function() {
+        return this.props.status.indexOf("active") > -1;
+    },
+    
     render: function() {
+        
+        console.log("Day.render")
         var day = this.props.day;
         var hours = _.range(0, 25);
-        
         var content = hours.map(function(hour) {
-          var timestamp = day + hour * 60 * 60 * 1000;
-          return (
-              <Calendar.Week.Hour value={timestamp} />
-          );
-        });
+            var ref = "hour:" + hour;
+            var timestamp = day + hour * 60 * 60 * 1000;
+            return (<Calendar.Week.Hour ref={ref} value={timestamp} scale={this.state.scale} />);
+        }.bind(this));
         
         // @TODO :faire une vue à la place
         // y inclure le state (n'appartient à à cette vue)
-        var timer = (function(props, state) {
-            var content = [];
-            var style = {top: 200, left: 0};
-            if (props.current) {
-                content.push(<div id="current-timer" style={style}>{state}</div>);
+        var is_active = this.is_active();
+        var timer = (function(props) {
+            if (is_active) {
+                return (<Calendar.Week.Timer scale={this.state.scale} />);
             }
-            return content;
-        })(this.props, this.state);
+        }.bind(this))(this.props);
         
         return (
-          <div data-view="day-view" className={this.props.status}>
-            {timer}
-              <table data-timestamp={day}>
-                  <tbody>
-                      {content}
-                  </tbody>
-              </table>
-        </div>
+            <div data-view="day-view" className={this.props.status}>
+                {timer}
+                <table data-timestamp={day}>
+                    <tbody>
+                        {content}
+                    </tbody>
+                </table>
+            </div>
+        );
+    }
+});
+
+
+Calendar.Week.Timer = React.createClass({
+    // @TODO : mettre un timeout pour changer l'heure a chaque fois
+    // mais uniquement lorsque cette vue est visible 
+    // donc en fonction du router
+    getInitialState: function() {
+        return {
+            "timestamp": moment().valueOf()
+        };
+    },
+    
+    to_decimal: function(label) {
+        var label = label.split(":");
+        return label[0] * 1 + (label[1] * 1 / 60);
+    },
+    
+    get_coords: function(label) {
+        var time = this.to_decimal(label);
+        console.log(time)
+        return {
+            left: "20%",
+            top: Math.ceil(time * this.props.scale),
+            width: "80%"
+        }
+    },
+    
+    render: function() {
+        var label = moment(this.state.timestamp).format("HH:mm");
+        var coords = this.get_coords(label);
+        console.log(coords)
+        return (
+            <div id="current-timer" style={coords}><span>{label}</span></div>
         );
     }
 });
 
 Calendar.Week.Hour = React.createClass({
     render: function() {
-            var label = moment(this.props.value).format("HH:mm");
-            return (
-                <tr>
+        var label = moment(this.props.value).format("HH:mm");
+        var height = this.props.scale;
+        return (
+            <tr style={{ "height": height}}>
                 <th scope="row"><span>{label}</span></th>
                 <td></td>
-                </tr>
-            );
-        }
+            </tr>
+        );
+    }
 });
 
 
