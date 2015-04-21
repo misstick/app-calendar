@@ -16,10 +16,7 @@ var WEEK_STEP = 1;  // Get the WEEK_STEP weeks before/after the current date
 
 var DATE_FORMAT_STORE = "DD-MM-YYYY";
 var DATE_FORMAT_FULL = "dddd D MMMM YYYY";
-
-var get_full_date = function(timestamp) {
-    return moment(timestamp).format(DATE_FORMAT_FULL);
-}
+var DATE_FORMAT_KEY = "YYYYMD";
 
 // var _get_period = function(scope, timestamp) {
 //     var current, min, max;
@@ -91,6 +88,14 @@ var _get_day_status = function(index, props) {
     return result.join(" ");
 }
 
+var _get_full_date = function(timestamp) {
+    return moment(timestamp).format(DATE_FORMAT_FULL);
+}
+
+var _get_id = function(timestamp, type) {
+    return moment(timestamp).format(DATE_FORMAT_KEY) + "-" + type;
+}
+
 /*
 
 {
@@ -148,6 +153,14 @@ var Calendar = React.createClass({
         this._displayScroll();
     },
     
+    _set_date: function(value) {
+        // Get the greater value less than current value when we scroll to the left
+        var _func = (value < this.state.date) ? "floor" : "ceil";
+        this.setState({
+            "date": Math[_func](value)
+        });
+    },
+    
     _displayScroll: function() {
         // Force ScrollValue
         var el = React.findDOMNode(this);
@@ -162,11 +175,12 @@ var Calendar = React.createClass({
         
         // Get the greater value less than current value when we scroll to the left
         var date = content.scrollLeft / content.offsetWidth;
-        var _func = (date < this.state.date) ? "floor" : "ceil";
-
-        this.setState({
-            "date": Math[_func](date)
-        });
+        this._set_date(date);
+    },
+    
+    _handleClickDate: function(event, data) {
+        var date = moment(data.timestamp).format("d");
+        this._set_date(date);
     },
 
     render: function() {
@@ -175,7 +189,7 @@ var Calendar = React.createClass({
             <div data-view="calendar-week-view" className="main-view">
                 <nav role="navigation">
                     <Calendar.Breadcrumb {...props} />
-                    <Calendar.Week.Menu {...props} />
+                    <Calendar.Week.Menu {...props} onClickDate={this._handleClickDate} />
                 </nav>
                 <Calendar.Week {...props} ref="Week" onScroll={_.debounce(this._handleScroll, SCROLL_DEBOUNCE)} />
             </div>
@@ -196,9 +210,8 @@ Calendar.Breadcrumb = React.createClass({
 Calendar.Week = React.createClass({
     render: function() {
         var days = this.props.days.map(function(day, index) {
-            var _status = _get_day_status(index, this.props);
             return (
-                <Calendar.Week.Day day={day} status={_status} />
+                <Calendar.Week.Day day={day} status={_get_day_status(index, this.props)} />
             );
         }.bind(this));
         
@@ -209,13 +222,8 @@ Calendar.Week = React.createClass({
         // @TODO : calculer la position du timer
         // @TODO : affecter l'événement avec addEventListener
         return (
-            <div data-view="week-view"
-                    className="scroll-view" 
-                    style={{height: 300}} 
-                    onScroll={this.props.onScroll}>
-                <div className="scroller" 
-                    ref="Scroller"
-                    style={styles}>
+            <div data-view="week-view" className="scroll-view"  style={{height: 300}}  onScroll={this.props.onScroll}>
+                <div className="scroller" ref="Scroller" style={styles}>
                     { days }
                 </div>
             </div>
@@ -225,41 +233,36 @@ Calendar.Week = React.createClass({
 
 Calendar.Week.Menu = React.createClass({
     render: function() {
-        
         // @FIXME: est-ce qu'il faut afficher le header pour tous les jours ?
         // dans le cas où l'on charge plusieurs semaine
         // Parceque : 1 tableau pour chaque semaine
-        var _current_date = this.current;
+        
         var props = [];
         
         var get_props = function(timestamp, index) {
-            var weekday = moment(timestamp).format("dddd");
             return {
-                id: weekday.toLowerCase() + "-cell",
-                weekday: weekday,
-                weekday_small: moment(timestamp).format("dd"),
-                date: moment(timestamp).date(),
-                className: _get_day_status(index, this.props)
+                timestamp: timestamp,
+                className: _get_day_status(index, this.props),
+                ref: _get_id(timestamp, "header")
             };
         }.bind(this);
         
-        
-        var header = this.props.days.map(function(data, index) {
-            var _props = get_props(data, index);
+        var header = this.props.days.map(function(timestamp, index) {
+            var _props = get_props(timestamp, index);
             props.push(_props);
+            _.extend(_props, {
+                onClick: this.props.onClickDate
+            })
             return (
-                <th id={_props.id} className={_props.className}>{_props.weekday_small}</th>
+                <Calendar.Week.Menu.Header {..._props} />
+            );
+        }.bind(this));
+        
+        var content = this.props.days.map(function(timestamp, index) {
+            return (
+                <Calendar.Week.Menu.Date {...props[index]} />
             );
         });
-        
-        var content = this.props.days.map(function(data, index) {
-            var _props = props[index];
-            return (
-                <td headers={_props.id}><span className={_props.className}>{_props.date}</span></td>
-            );
-        })
-        
-        var footer = get_full_date(this.props.current);
         
         return (
             <table data-view="calendar-menu">
@@ -275,10 +278,42 @@ Calendar.Week.Menu = React.createClass({
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colSpan="7"><h1>{footer}</h1></td>
+                        <Calendar.Week.Menu.Footer current={this.current} />
                     </tr>
                 </tfoot>
             </table>
+        );
+    }
+});
+
+Calendar.Week.Menu.Header = React.createClass({
+    render: function() {
+        return (
+            <th id={this.props.ref} className={this.props.className}>{moment(this.props.timestamp).format("dd")}</th>
+        );
+    }
+});
+Calendar.Week.Menu.Date = React.createClass({
+    
+    _handle_click: function(event) {
+        this.props.onClick.call(this, event, {
+            timestamp: this.props.timestamp
+        });
+    },
+    
+    render: function() {
+        return (
+            <td headers={this.props.ref}>
+                <a onClick={this._handle_click} className={this.props.className}>{moment(this.props.timestamp).date()}</a>
+            </td>
+        );
+    }
+});
+
+Calendar.Week.Menu.Footer = React.createClass({
+    render: function() {
+        return (
+            <td colSpan="7"><h1>{_get_full_date(this.props.current)}</h1></td>
         );
     }
 });
@@ -341,15 +376,15 @@ Calendar.Week.Day = React.createClass({
 });
 
 Calendar.Week.Hour = React.createClass({
-  render: function() {
-      var label = moment(this.props.value).format("HH:mm");
-      return (
-          <tr>
-              <th scope="row"><span>{label}</span></th>
-              <td></td>
-          </tr>
-      );
-  }
+    render: function() {
+            var label = moment(this.props.value).format("HH:mm");
+            return (
+                <tr>
+                <th scope="row"><span>{label}</span></th>
+                <td></td>
+                </tr>
+            );
+        }
 });
 
 

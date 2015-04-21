@@ -13,18 +13,6 @@
             box-sizing: border-box;
         }
         
-        span.current {
-            color: red;
-        }
-        span.current.active {
-            border-color: red;
-            background-color: red;
-        }
-        span.active {
-            border-color: black;
-            background-color: black;
-            color: white;
-        }
         .week-end,
         .day-off {
             color: #ccc;
@@ -164,7 +152,7 @@
         [data-view="calendar-menu"] .ellipsis {
             display: none;
         }
-        [data-view="calendar-menu"] td>span {
+        [data-view="calendar-menu"] td a {
             display: inline-block;
             box-sizing: border-box;
             text-align: center;
@@ -173,6 +161,22 @@
             height: 28px;
             line-height: 30px;
             border-radius: 14px;
+        }
+        [data-view="calendar-menu"] td a:hover {
+            cursor: pointer;
+        }
+        
+        [data-view="calendar-menu"] a.current {
+            color: red;
+        }
+        [data-view="calendar-menu"] a.current.active {
+            border-color: red;
+            background-color: red;
+        }
+        [data-view="calendar-menu"] a.active {
+            border-color: black;
+            background-color: black;
+            color: white;
         }
         
         [data-view="calendar-week-view"] .scroller {
