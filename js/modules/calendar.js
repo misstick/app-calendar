@@ -189,7 +189,7 @@ var Calendar = React.createClass({
         return (
             React.createElement(Calendar[this.state.type], 
                 { 
-                    parentState: this.state, 
+                    data: this.state, 
                     callback: callback
                 })
         );
@@ -216,26 +216,53 @@ Calendar.Breadcrumb = React.createClass({
 });
 
 Calendar.Month = React.createClass({
-    render: function() {
-        var callback = this.props.callback;
-        var data = this.props.parentState;
-        var weeks = [moment(data.current).day(-7).valueOf(), data.current, moment(data.current).day(+7).valueOf()];
+    
+    getInitialState: function() {
+        return {
+            current: null,
+            active: null
+        }
+    },
+    
+    getDefaultProps: function() {
+        return {
+            callback: null,
+            data: null,
+            weeks: []
+        };
+    },
+    
+    _selectWeek: function() {
         
-        var content = weeks.map(function(timestamp) {
+    },
+
+    componentWillMount: function() {
+        var _current = this.props.data.current;
+        var _next = moment(_current).day(+7).valueOf();
+        var _prev = moment(_current).day(-7).valueOf();
+        this.props.weeks = [_prev, _current , _next];
+    },
+    
+    componentDidMount: function() {
+        
+    },
+    
+    render: function() {
+        var content = this.props.weeks.map(function(timestamp) {
             var week = _getWeek(timestamp);
             return (
                 <div data-view="calendar-week-view" style={{width: "33.33%"}}>
                     <nav role="navigation">
-                        <Calendar.Menu week={week} data={data} onClick={callback.onClickDate} />
+                        <Calendar.Menu week={week} data={this.props.data} onClick={this.props.callback.onClickDate} />
                     </nav>
-                    <Calendar.Week week={week} data={data} />
+                    <Calendar.Week week={week} data={this.props.data} />
                 </div>
             );
-        });
+        }.bind(this));
         
         return (
             <div data-view="calendar-month-view" className="main-view">
-                <Calendar.Breadcrumb data={data} onClick={callback.onClickBreadcrumb} />
+                <Calendar.Breadcrumb data={this.props.data} onClick={this.props.callback.onClickBreadcrumb} />
                 <div className="scroll-view">
                     <div className="scroller" ref="Scroller" style={{width: "300%"}}>
                         { content }
