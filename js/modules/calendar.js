@@ -23,24 +23,36 @@ var _getWeek = function(timestamp) {
     var first = moment(timestamp).startOf("week");
     var last = moment(timestamp).endOf("week");
     
-    
     // console.log(_toDateString(first), _toDateString(timestamp), _toDateString(last));
     
-    //@TODO : ne récupérer que les jours du même mois
-    // si la semaine comporte un autre mois : mettre du vide
     var day = first;
-    while(day.isBefore(last) || day.isSame(last)) {
+    var month = day.month();
+    while((day.isBefore(last) || day.isSame(last)) && day.month() == month) {
         result.push(day.valueOf());
         day = day.add(1, "days");
     }
     return result;
 }
     
-var _getWeeks = function(timestamp) {
+var _getWeeks = function(type, timestamp) {
+    if (type == "Month") {
+        return {
+            "previous": moment(timestamp).day(-7).valueOf(),
+            "active": timestamp,
+            "next": moment(timestamp).day(+7).valueOf()
+        };
+    }
+    if (type == "Year") {
+        return {
+            "previous": moment(timestamp).month(-1).valueOf(),
+            "active": timestamp,
+            "next": moment(timestamp).day(+1).valueOf()
+        };
+    }
     return {
-        "previous": moment(timestamp).day(-7).valueOf(),
+        "previous": moment(timestamp).year(-1).valueOf(),
         "active": timestamp,
-        "next": moment(timestamp).day(+7).valueOf()
+        "next": moment(timestamp).year(+1).valueOf()
     };
 };
 
@@ -115,14 +127,10 @@ var Calendar = React.createClass({
     },
 
     componentWillMount: function() {
-        // @TODO : initialize here
-        // this.state.type
-        // console.log("=> Calendar", this.props)
-        
-        var _today = moment().valueOf();
+        var current = moment();
         this.setState({
-            "current": moment().valueOf(),
-            "active": moment().weekday(2).valueOf()
+            "current": current.valueOf(),
+            "active": current.weekday(2).valueOf()
         });
     },
     
@@ -186,7 +194,7 @@ var Calendar = React.createClass({
             React.createElement(Calendar[this.state.type], 
                 { 
                     data: this.state,
-                    weeks: _getWeeks(this.state.active),
+                    weeks: _getWeeks(this.state.type, this.state.active),
                     callback: callback
                 })
         );
@@ -229,7 +237,6 @@ Calendar.Month = React.createClass({
     },
     
     render: function() {
-        console.log("Calendar.Month.render", this.props)
         
         var content = _.map(this.props.weeks, function(timestamp, key) {
             var week = _getWeek(timestamp);
@@ -284,6 +291,11 @@ Calendar.Menu = React.createClass({
         
         var props = [];
         
+        while(this.props.week.length < 7) {
+            this.props.week.push(null);
+        }
+        
+        
         var _getProps = function(timestamp, index) {
             return {
                 timestamp: timestamp,
@@ -291,7 +303,7 @@ Calendar.Menu = React.createClass({
                 onClick: this.props.onClick
             };
         }.bind(this);
-
+        
         var header = this.props.week.map(function(timestamp, index) {
             props.push(_getProps(timestamp, index));
             return (
@@ -337,6 +349,13 @@ Calendar.Menu.Header = React.createClass({
     },
     
     render: function() {
+        
+        if (!this.props.timestamp) {
+            return (
+                <th></th>
+            );
+        }
+        
         return (
             <th className={this.props.className}>
                 <a onClick={this._handleClick}>{moment(this.props.timestamp).format("dd")}</a>
@@ -353,6 +372,13 @@ Calendar.Menu.Date = React.createClass({
     },
     
     render: function() {
+        
+        if (!this.props.timestamp) {
+            return (
+                <td></td>
+            );
+        }
+        
         return (
             <td>
                 <a onClick={this._handleClick} className={this.props.className}>{moment(this.props.timestamp).date()}</a>

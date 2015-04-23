@@ -4,6 +4,6 @@ var Calendar = require('./modules/calendar.js');
 var Test = require('./modules/test.js');
 
 React.render(
-  <Calendar />,
-  document.getElementById('calendar-container')
+    <Calendar type="Year" />,
+    document.getElementById('calendar-container')
 );

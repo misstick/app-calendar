@@ -154,6 +154,7 @@
             text-align: center;
         }
         [data-view="calendar-menu"] th {
+            width: 14.28%;
             text-transform: capitalize;
         }
         [data-view="calendar-menu"] .ellipsis {
