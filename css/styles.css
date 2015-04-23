@@ -54,6 +54,14 @@
             background: wheat;
             color: black;
         }
+        .main-view .breadcrumb a {
+            color: inherit;
+            text-decoration: underline;
+        }
+        .main-view nav a:hover,
+        .main-view .breadcrumb a:hover {
+            cursor: pointer;
+        }
         .main-view .breadcrumb {
             position: relative;
             display: block;
@@ -65,9 +73,6 @@
         .main-view .breadcrumb:before {
             content: "<";
             padding-right: 1em;
-        }
-        .main-view .breadcrumb a {
-            color: inherit;
         }
 
         .main-view nav {
@@ -163,9 +168,6 @@
             height: 28px;
             line-height: 30px;
             border-radius: 14px;
-        }
-        [data-view="calendar-menu"] a:hover {
-            cursor: pointer;
         }
         
         [data-view="calendar-menu"] a.current {

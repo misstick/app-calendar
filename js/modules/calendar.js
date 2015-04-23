@@ -59,6 +59,25 @@ var _getId = function(type, timestamp) {
     return moment(timestamp).format(DATE_FORMAT_KEY) + "-" + type;
 }
 
+var _getViewType = function(data) {
+    switch (data.type) {
+        case "Month":
+            return "Year";
+            break;
+            
+        case "Year":
+            return "Global";
+            break;
+            
+        case "Event":
+            return "Month";
+            break;
+        
+        default:
+            return "Global";
+            break;
+    }
+}
 /*
 
 {
@@ -149,10 +168,19 @@ var Calendar = React.createClass({
     _selectDate: function(data) {
         this._set_active(data);
     },
+    
+    _updateType: function(value) {
+        console.log("_updateType", value)
+        // this.setState({
+        //     type: value
+        // })
+    },
 
     render: function() {
         
-        var callback = {};
+        var callback = {
+            onClickBreadcrumb: this._updateType
+        };
         if (this.state.type == "Month") {
             callback.onClickDate = this._selectDate;
             // callback.onScrollWeek = _.debounce(this._handleScroll, SCROLL_DEBOUNCE);
@@ -170,24 +198,27 @@ var Calendar = React.createClass({
 });
 
 Calendar.Breadcrumb = React.createClass({
-  render: function() {
-      var month = moment(this.props.active).format("MMMM");
-      return (
-          <aside className="breadcrumb">
-              <a href="#" className="breadcrumb-item">{month}</a>
-          </aside>
-      );
-  }
+    
+    _handleClick: function() {
+        this.props.onClick.call(this, {
+            type: _getViewType(this.props.data)
+        })
+    },
+    
+    render: function() {
+        var month = moment(this.props.active).format("MMMM");
+        return (
+            <aside className="breadcrumb">
+                <a onClick={this._handleClick} className="breadcrumb-item">{month}</a>
+            </aside>
+        );
+    }
 });
 
 Calendar.Month = React.createClass({
     render: function() {
         var callback = this.props.callback;
-        
-        var data = {
-            active: this.props.parentState.active,
-            current: this.props.parentState.current
-        }
+        var data = this.props.parentState;
         var weeks = [moment(data.current).day(-7).valueOf(), data.current, moment(data.current).day(+7).valueOf()];
         
         var content = weeks.map(function(timestamp) {
@@ -204,8 +235,8 @@ Calendar.Month = React.createClass({
         
         return (
             <div data-view="calendar-month-view" className="main-view">
-                <Calendar.Breadcrumb data={data} />
-                <div className="scroll-view" style={{overflow: "hidden"}}>
+                <Calendar.Breadcrumb data={data} onClick={callback.onClickBreadcrumb} />
+                <div className="scroll-view">
                     <div className="scroller" ref="Scroller" style={{width: "300%"}}>
                         { content }
                     </div>
