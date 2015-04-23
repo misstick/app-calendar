@@ -294,9 +294,9 @@
             position: relative;
             z-index: 1;
         }
-        [data-view=calendar-month-view] {
+/*        [data-view=calendar-month-view] {
             overflow: auto;
-        }
+        }*/
         [data-view=calendar-week-view] {
             float: left;
         }

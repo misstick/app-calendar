@@ -97,6 +97,13 @@ var _getViewType = function(data) {
             break;
     }
 }
+
+var _goto = function(type) {
+    var el = React.findDOMNode(this.refs["scroll-view"]);
+    var content = React.findDOMNode(this.refs["active"]);
+    el.scrollLeft = content.offsetLeft;
+}
+
 /*
 
 {
@@ -133,15 +140,15 @@ var Calendar = React.createClass({
             "active": current.weekday(2).valueOf()
         });
     },
-    
+    //
     // componentDidMount: function() {
     //     // @TODO : handle the into MonthView
-    //     // this._displayScroll();
+    //     this._displayScroll();
     // },
     //
     // componentDidUpdate: function() {
     //     // @TODO : handle the into MonthView
-    //     // this._displayScroll();
+    //     this._displayScroll();
     // },
     
     // // Force Scroll
@@ -152,7 +159,7 @@ var Calendar = React.createClass({
     //     // console.log("_displayScroll", _toDateString(this.state.active), weekday);
     //     content.scrollLeft = weekday * el.offsetWidth;
     // },
-    //
+   
     // // @FIXME : les événements se chevauchent
     // // vois si l'utilisation de lux avec le dispatcher
     // // ne résoudrait pas ce conflit
@@ -223,17 +230,31 @@ Calendar.Breadcrumb = React.createClass({
 Calendar.Month = React.createClass({
     
     _gotoWeek: function(status) {
-        var content = React.findDOMNode(this.refs["Scroller"]);
-        var week = React.findDOMNode(this.refs[status + "-week"]);
-        content.scrollLeft = week.offsetLeft;
+        // @FIXME : conflict whitch other Scroll Call
+        // Use dispatcher to handle these events
+        _goto.call(this, "Week");
     },
 
     componentDidMount: function() {
-        this._gotoWeek("active");
+        this._gotoWeek();
     },
     
     componentDidUpdate: function() {
-        // this._gotoWeek("active");
+        this._gotoWeek();
+    },
+    
+    _handleScroll: function() {
+        // @FIXME : conflict whitch other Scroll Call
+        // Use dispatcher to handle these events
+        
+        // @TODO: get week active number
+        // update Calendar.state.active
+        // => le render global remodifiera tout
+        
+        // @TODO: définir la limite min/max du scroll
+        // si on tombe 2x de suite sur la valeur
+        // alors activer la semaine précédente/suivante
+        // => le render re-modiefiera tout
     },
     
     render: function() {
@@ -241,7 +262,7 @@ Calendar.Month = React.createClass({
         var content = _.map(this.props.weeks, function(timestamp, key) {
             var week = _getWeek(timestamp);
             return (
-                <div data-view="calendar-week-view" style={{width: "33.33%"}} ref={key + "-week"}>
+                <div data-view="calendar-week-view" style={{width: "33.33%"}} ref={key}>
                     <nav role="navigation">
                         <Calendar.Menu week={week} data={this.props.data} onClick={this.props.callback.onClickDate} />
                     </nav>
@@ -249,11 +270,13 @@ Calendar.Month = React.createClass({
                 </div>
             );
         }.bind(this));
+
+        var _handleScroll = _.debounce(this._handleScroll, SCROLL_DEBOUNCE);
         
         return (
             <div data-view="calendar-month-view" className="main-view">
                 <Calendar.Breadcrumb data={this.props.data} onClick={this.props.callback.onClickBreadcrumb} />
-                <div className="scroll-view" ref="Scroller">
+                <div className="scroll-view" ref="scroll-view" style={{overflow: "hidden"}} onScroll={_handleScroll}>
                     <div className="scroller" style={{width: "300%"}}>
                         { content }
                     </div>
@@ -264,19 +287,45 @@ Calendar.Month = React.createClass({
 });
 
 Calendar.Week = React.createClass({
+
+    _gotoDay: function(status) {
+        // @FIXME : conflict whitch other Scroll Call
+        // Use dispatcher to handle these events
+        // _goto.call(this, "Day");
+    },
+
+    componentDidMount: function() {
+        this._gotoDay();
+    },
+    
+    componentDidUpdate: function() {
+        this._gotoDay();
+    },
+    
+    _handleScroll: function() {
+        var scroller = React.findDOMNode(this.refs["Scroller"]);
+    },
+    
     render: function() {
-        
         var content = this.props.week.map(function(day, index) {
+            var props = {
+                day: day,
+                active: _getDayStatus(day, {active: this.props.data.active})
+            };
+            if (props.active) {
+                props.ref = "active";
+            }
             return (
-                <Calendar.Month.Day day={day} status={_getDayStatus(day, this.props.data)} />
+                <Calendar.Month.Day {...props} />
             );
         }.bind(this));
         
          // onScroll={this.props.onScroll}
+        var _handleScroll = _.debounce(this._handleScroll, SCROLL_DEBOUNCE);
 
         return (
-            <div className="scroll-view"  style={{height: 300}}>
-                <div className="scroller" ref="Scroller" style={{width: "700%"}}>
+            <div className="scroll-view" ref="scroll-view" style={{height: 300}} onScroll={_handleScroll}>
+                <div className="scroller" style={{width: "700%"}}>
                     { content }
                 </div>
             </div>
@@ -363,6 +412,7 @@ Calendar.Menu.Header = React.createClass({
         );
     }
 });
+
 Calendar.Menu.Date = React.createClass({
     
     _handleClick: function() {
@@ -404,18 +454,14 @@ Calendar.Month.Day = React.createClass({
     },
   
     componentDidMount: function() {
-        var is_active = this.is_active();
-        if (is_active) {
-            // @TODO : aller au moment courant
-            // Scoller en hauteur
-            // Pour aller jusqu'au Timer
-            
-            // @TODO : Initialiser le timer gràce à cette value
-        }
-    },
-    
-    is_active: function() {
-        return this.props.status.indexOf("active") > -1;
+        // var is_active = this.is_active();
+       //  if (is_active) {
+       //      // @TODO : aller au moment courant
+       //      // Scoller en hauteur
+       //      // Pour aller jusqu'au Timer
+       //
+       //      // @TODO : Initialiser le timer gràce à cette value
+       //  }
     },
     
     render: function() {
@@ -429,7 +475,12 @@ Calendar.Month.Day = React.createClass({
         
         // @TODO :faire une vue à la place
         // y inclure le state (n'appartient à à cette vue)
-        var is_active = this.is_active();
+        // var is_active = this.is_active();
+        
+        var is_active = false;
+
+        // var _status = _getDayStatus(day, this.props.data);
+        
         var timer = (function(props) {
             if (is_active) {
                 return (<Calendar.Month.Timer scale={this.state.scale} />);
@@ -437,7 +488,7 @@ Calendar.Month.Day = React.createClass({
         }.bind(this))(this.props);
         
         return (
-            <div data-view="day-view" className={this.props.status}>
+            <div data-view="day-view">
                 {timer}
                 <table data-timestamp={day}>
                     <tbody>
