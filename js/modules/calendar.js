@@ -35,6 +35,14 @@ var _getWeek = function(timestamp) {
     }
     return result;
 }
+    
+var _getWeeks = function(timestamp) {
+    return {
+        "previous": moment(timestamp).day(-7).valueOf(),
+        "active": timestamp,
+        "next": moment(timestamp).day(+7).valueOf()
+    };
+};
 
 var _getDayStatus = function(timestamp, data) {
     var _isEqual = function(value0, value1) {
@@ -128,19 +136,6 @@ var Calendar = React.createClass({
     //     // this._displayScroll();
     // },
     
-    _set_active: function(data) {
-        var value;
-        if (data.timestamp) {
-            value = data.timestamp;
-        } else if (data.weekday) {
-            value = moment(this.state.active).weekday(data.weekday).valueOf();
-        }
-        // console.log("_set_active", _toDateString(value), this.state.active)
-        this.setState({
-            "active": value
-        });
-    },
-
     // // Force Scroll
     // _displayScroll: function() {
     //     var el = React.findDOMNode(this);
@@ -165,7 +160,9 @@ var Calendar = React.createClass({
     // },
     
     _selectDate: function(data) {
-        this._set_active(data);
+        this.setState({
+            "active": data.timestamp
+        });
     },
     
     _updateType: function(value) {
@@ -188,7 +185,8 @@ var Calendar = React.createClass({
         return (
             React.createElement(Calendar[this.state.type], 
                 { 
-                    data: this.state, 
+                    data: this.state,
+                    weeks: _getWeeks(this.state.active),
                     callback: callback
                 })
         );
@@ -216,14 +214,6 @@ Calendar.Breadcrumb = React.createClass({
 
 Calendar.Month = React.createClass({
     
-    getDefaultProps: function() {
-        return {
-            callback: null,
-            data: null,
-            weeks: []
-        };
-    },
-    
     _gotoWeek: function(status) {
         var content = React.findDOMNode(this.refs["Scroller"]);
         var week = React.findDOMNode(this.refs[status + "-week"]);
@@ -234,17 +224,13 @@ Calendar.Month = React.createClass({
         this._gotoWeek("active");
     },
     
-    componentWillMount: function() {
-        
-        var week = this.props.data.current;
-        this.props.weeks = {
-            "previous": moment(week).day(-7).valueOf(),
-            "active": week,
-            "next": moment(week).day(+7).valueOf()
-        };
+    componentDidUpdate: function() {
+        // this._gotoWeek("active");
     },
     
     render: function() {
+        console.log("Calendar.Month.render", this.props)
+        
         var content = _.map(this.props.weeks, function(timestamp, key) {
             var week = _getWeek(timestamp);
             return (
