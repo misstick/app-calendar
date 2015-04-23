@@ -49,23 +49,25 @@
             margin: 0.5em;
             font-size: 0.9em;
         }
-        .main-view nav{
+        .main-view nav, 
+        .main-view .breadcrumb {
             background: wheat;
             color: black;
         }
         .main-view .breadcrumb {
             position: relative;
-            display: inline-block;
+            display: block;
             padding: 0.5em 1em 0.75em;
-            margin-left: 1em;
+            box-sizing: border-box;
             color:inherit;
             font-size: 0.9em;
         }
         .main-view .breadcrumb:before {
             content: "<";
             padding-right: 1em;
-            position: absolute;
-            left: 0;
+        }
+        .main-view .breadcrumb a {
+            color: inherit;
         }
 
         .main-view nav {
@@ -162,7 +164,7 @@
             line-height: 30px;
             border-radius: 14px;
         }
-        [data-view="calendar-menu"] td a:hover {
+        [data-view="calendar-menu"] a:hover {
             cursor: pointer;
         }
         
@@ -288,6 +290,12 @@
         [data-view="month-view"] td span {
             position: relative;
             z-index: 1;
+        }
+        [data-view=calendar-month-view] {
+            overflow: auto;
+        }
+        [data-view=calendar-week-view] {
+            float: left;
         }
         
 
