@@ -48,7 +48,6 @@ var _getDayStatus = function(timestamp, data) {
         }
     });
     return result.join(" ");
-    
 }
 
 var _toDateString = function(timestamp) {
@@ -119,15 +118,15 @@ var Calendar = React.createClass({
         });
     },
     
-    componentDidMount: function() {
-        // @TODO : handle the into MonthView
-        // this._displayScroll();
-    },
-    
-    componentDidUpdate: function() {
-        // @TODO : handle the into MonthView
-        // this._displayScroll();
-    },
+    // componentDidMount: function() {
+    //     // @TODO : handle the into MonthView
+    //     // this._displayScroll();
+    // },
+    //
+    // componentDidUpdate: function() {
+    //     // @TODO : handle the into MonthView
+    //     // this._displayScroll();
+    // },
     
     _set_active: function(data) {
         var value;
@@ -142,28 +141,28 @@ var Calendar = React.createClass({
         });
     },
 
-    // Force Scroll
-    _displayScroll: function() {
-        var el = React.findDOMNode(this);
-        var content = React.findDOMNode(this.refs["Week"]);
-        var weekday = moment(this.state.active).weekday().valueOf();
-        // console.log("_displayScroll", _toDateString(this.state.active), weekday);
-        content.scrollLeft = weekday * el.offsetWidth;
-    },
-    
-    // @FIXME : les événements se chevauchent
-    // vois si l'utilisation de lux avec le dispatcher
-    // ne résoudrait pas ce conflit
-    _handleScroll: function() {
-        // var content = React.findDOMNode(this.refs["Week"]);
-        // var weekday_tmp = content.scrollLeft / content.offsetWidth;
-        // var weekday = moment(this.state.active).weekday().valueOf();
-        //
-        // // Get the greater value less than current value when we scroll to the left
-        // var _floor = (weekday_tmp < weekday) ? "floor" : "ceil";
-        // console.log("_handleScroll", weekday, { weekday: Math[_floor](weekday_tmp)})
-        // this._set_active({ weekday: Math[_floor](weekday_tmp)});
-    },
+    // // Force Scroll
+    // _displayScroll: function() {
+    //     var el = React.findDOMNode(this);
+    //     var content = React.findDOMNode(this.refs["Week"]);
+    //     var weekday = moment(this.state.active).weekday().valueOf();
+    //     // console.log("_displayScroll", _toDateString(this.state.active), weekday);
+    //     content.scrollLeft = weekday * el.offsetWidth;
+    // },
+    //
+    // // @FIXME : les événements se chevauchent
+    // // vois si l'utilisation de lux avec le dispatcher
+    // // ne résoudrait pas ce conflit
+    // _handleScroll: function() {
+    //     // var content = React.findDOMNode(this.refs["Week"]);
+    //     // var weekday_tmp = content.scrollLeft / content.offsetWidth;
+    //     // var weekday = moment(this.state.active).weekday().valueOf();
+    //     //
+    //     // // Get the greater value less than current value when we scroll to the left
+    //     // var _floor = (weekday_tmp < weekday) ? "floor" : "ceil";
+    //     // console.log("_handleScroll", weekday, { weekday: Math[_floor](weekday_tmp)})
+    //     // this._set_active({ weekday: Math[_floor](weekday_tmp)});
+    // },
     
     _selectDate: function(data) {
         this._set_active(data);
@@ -217,13 +216,6 @@ Calendar.Breadcrumb = React.createClass({
 
 Calendar.Month = React.createClass({
     
-    getInitialState: function() {
-        return {
-            current: null,
-            active: null
-        }
-    },
-    
     getDefaultProps: function() {
         return {
             callback: null,
@@ -232,26 +224,31 @@ Calendar.Month = React.createClass({
         };
     },
     
-    _selectWeek: function() {
-        
+    _gotoWeek: function(status) {
+        var content = React.findDOMNode(this.refs["Scroller"]);
+        var week = React.findDOMNode(this.refs[status + "-week"]);
+        content.scrollLeft = week.offsetLeft;
     },
 
-    componentWillMount: function() {
-        var _current = this.props.data.current;
-        var _next = moment(_current).day(+7).valueOf();
-        var _prev = moment(_current).day(-7).valueOf();
-        this.props.weeks = [_prev, _current , _next];
+    componentDidMount: function() {
+        this._gotoWeek("active");
     },
     
-    componentDidMount: function() {
+    componentWillMount: function() {
         
+        var week = this.props.data.current;
+        this.props.weeks = {
+            "previous": moment(week).day(-7).valueOf(),
+            "active": week,
+            "next": moment(week).day(+7).valueOf()
+        };
     },
     
     render: function() {
-        var content = this.props.weeks.map(function(timestamp) {
+        var content = _.map(this.props.weeks, function(timestamp, key) {
             var week = _getWeek(timestamp);
             return (
-                <div data-view="calendar-week-view" style={{width: "33.33%"}}>
+                <div data-view="calendar-week-view" style={{width: "33.33%"}} ref={key + "-week"}>
                     <nav role="navigation">
                         <Calendar.Menu week={week} data={this.props.data} onClick={this.props.callback.onClickDate} />
                     </nav>
@@ -263,8 +260,8 @@ Calendar.Month = React.createClass({
         return (
             <div data-view="calendar-month-view" className="main-view">
                 <Calendar.Breadcrumb data={this.props.data} onClick={this.props.callback.onClickBreadcrumb} />
-                <div className="scroll-view">
-                    <div className="scroller" ref="Scroller" style={{width: "300%"}}>
+                <div className="scroll-view" ref="Scroller">
+                    <div className="scroller" style={{width: "300%"}}>
                         { content }
                     </div>
                 </div>
@@ -275,6 +272,7 @@ Calendar.Month = React.createClass({
 
 Calendar.Week = React.createClass({
     render: function() {
+        
         var content = this.props.week.map(function(day, index) {
             return (
                 <Calendar.Month.Day day={day} status={_getDayStatus(day, this.props.data)} />
