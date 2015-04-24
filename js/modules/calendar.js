@@ -11,8 +11,10 @@ console.log(moment(1316116057189).fromNow());
 var SCROLL_DEBOUNCE = 500;
 var RESIZE_DEBOUNCE = 100;
 
-var DATE_FORMAT_STORE = "DD-MM-YYYY";
-var DATE_FORMAT_FULL = "dddd D MMMM YYYY";
+var DATE_FORMAT_ALL = "dddd D MMMM YYYY";
+var DATE_FORMAT_MONTH_YEAR = "MMMM YYYY";
+var DATE_FORMAT_YEAR = "YYYY";
+var DATE_FORMAT_MONTH = "MMMM";
 var DATE_FORMAT_KEY = "YYYYMD";
 
 // @TODO : use this to get Days into Year && Home Views
@@ -68,11 +70,74 @@ var _getDayStatus = function(timestamp, data) {
 }
 
 var _toDateString = function(timestamp) {
-    return moment(timestamp).format(DATE_FORMAT_FULL);
+    return moment(timestamp).format(DATE_FORMAT_ALL);
 }
 
 var _getId = function(type, timestamp) {
-    return moment(timestamp).format(DATE_FORMAT_KEY) + "-" + type;
+    if (_.isNull(timestamp)) {
+        return false;
+    }
+    return type + "::" + moment(timestamp).valueOf();
+}
+
+var _getState = function(obj0, obj1) {
+    var data = null;
+    _.keys(obj0).forEach(function(key) {
+        var value = obj1[key];
+        if (!_.isUndefined(value) && !_.isNull(value) && !_.isEmpty(value)) {
+            if (_.isNull(data)) {
+                data = {};
+            }
+            data[key] = value;
+        }
+    });
+    return data;
+}
+
+var _getViewProps = function(props) {
+    var _props = {};
+    var _propsKeys = _.keys(props);
+    var _viewKeys = ["Menu", "Week.Content", "Breadcrumb"];
+
+    _viewKeys.forEach(function(view) {
+        _props[view] = {};
+        _propsKeys.forEach(function(prop) {
+            var value = this.props[prop][view];
+            if (!_.isUndefined(value)) {
+                _props[view][prop] = value;
+            }
+
+        }.bind(this));
+    }.bind(this));
+    return _props;
+}
+        
+
+var _CalendarFormat = function(view, type) {
+    var result;
+    if (view == "Breadcrumb") {
+        switch (type) {
+            case "Week":
+                result = DATE_FORMAT_MONTH;
+                break;
+            
+            case "Month":
+                result = DATE_FORMAT_YEAR;
+                break;
+        }
+    }
+    if (view == "Menu.Footer") {
+        switch (type) {
+            case "Week":
+                result = DATE_FORMAT_ALL;
+                break;
+            
+            case "Month":
+                result = DATE_FORMAT_MONTH_YEAR;
+                break;
+        }
+    }
+    return result;
 }
 
 var _CalendarGoBackData = function(data) {
@@ -104,7 +169,7 @@ var _CalendarGoBackData = function(data) {
     return result;
 }
 
-var _goto = function(type) {
+var _scrollTo = function(type) {
     var el = React.findDOMNode(this.refs["scroll-view"]);
     var content = React.findDOMNode(this.refs["active"]);
     el.scrollLeft = content.offsetLeft;
@@ -132,16 +197,21 @@ var Calendar = React.createClass({
          - "year"
     */
     getInitialState: function() {
+        var date = moment();
         return {
-            current: null,  // Current Day
-            active: null,      // Day visible into the view (scrollTO that day)
+            current: date.valueOf(),  // Current Day
+            active: date.weekday(2).valueOf(),      // Day visible into the view (scrollTO that day)
             type: "Week"
         };
     },
 
     componentWillMount: function() {
-        this.setState(this.props);
+        var data = _getState(this.state, this.props);
+        if (data) {
+            this.setState(data);
+        }
     },
+    
     //
     // componentDidMount: function() {
     //     // @TODO : handle the into MonthView
@@ -176,6 +246,34 @@ var Calendar = React.createClass({
     //     // this._set_active({ weekday: Math[_floor](weekday_tmp)});
     // },
     
+    _getViewProps: function() {
+        
+        var props = {};
+        props.data = this.state;
+        props.weeks = _CalendarData(this.state);
+        
+        props.format =  {
+            "Breadcrumb": _CalendarFormat("Breadcrumb", this.state.type),
+            "Menu.Footer": _CalendarFormat("Menu.Footer", this.state.type)
+        };
+        props.callback = {
+            "Breadcrumb": this._updateMainView
+        };
+        
+        //@TODO : passer une valeur pour le formatage du breadcrumb en cours
+        // il s'agira d'un state pour la vue Breadcrumb
+        if (this.state.type == "Week") {
+            props.callback["Menu.Header"] = {
+                "onClick": this._selectDate
+            };
+            props.callback["Week.Content"] = {
+                "onScroll": _.debounce(this._handleScroll, SCROLL_DEBOUNCE)
+            };
+        }
+        
+        return props;
+    },
+    
     _selectDate: function(data) {
         this.setState({
             "active": data.timestamp
@@ -187,47 +285,12 @@ var Calendar = React.createClass({
     },
 
     render: function() {
-        
-        var data = _.clone(this.state);
-        
-        var callback = {
-            onClickBreadcrumb: this._updateMainView
-        };
-        
-        //@TODO : passer une valeur pour le formatage du breadcrumb en cours
-        // il s'agira d'un state pour la vue Breadcrumb
-        if (this.state.type == "Week") {
-            callback.onClickDate = this._selectDate;
-            // callback.onScrollWeek = _.debounce(this._handleScroll, SCROLL_DEBOUNCE);
-        }
-
-        return (
-            React.createElement(Calendar[this.state.type], 
-                { 
-                    data: this.state,
-                    weeks: _CalendarData(this.state),
-                    callback: callback
-                })
+        var _props = this._getViewProps();
+        return (        
+            React.createElement(Calendar[this.state.type], _props)
         );
     }
 
-});
-
-Calendar.Breadcrumb = React.createClass({
-    
-    _handleClick: function() {
-        var data = _CalendarGoBackData(this.props.data);
-        this.props.onClick.call(this, data)
-    },
-    
-    render: function() {
-        var month = moment(this.props.active).format("MMMM");
-        return (
-            <aside className="breadcrumb">
-                <a onClick={this._handleClick} className="breadcrumb-item">{month}</a>
-            </aside>
-        );
-    }
 });
 
 Calendar.Year = React.createClass({
@@ -330,18 +393,18 @@ Calendar.Month.Content = React.createClass({
 
 Calendar.Week = React.createClass({
     
-    _gotoWeek: function(status) {
+    _scrollToWeek: function(status) {
         // @FIXME : conflict with other Scroll Call
         // Use dispatcher to handle these events
-        _goto.call(this, "Week");
+        _scrollTo.call(this, "Week");
     },
 
     componentDidMount: function() {
-        this._gotoWeek();
+        this._scrollToWeek();
     },
     
     componentDidUpdate: function() {
-        this._gotoWeek();
+        this._scrollToWeek();
     },
     
     _handleScroll: function() {
@@ -358,16 +421,27 @@ Calendar.Week = React.createClass({
         // => le render re-modiefiera tout
     },
     
+    _getViewProps: function() {
+        return _getViewProps();
+    },
+    
     render: function() {
         
+        var props = this._getViewProps();
+        console.log("Calendar.Week", props)
+        
+        var props = _.omit(this.props, "weeks");
+        
         var content = _.map(this.props.weeks, function(timestamp, key) {
-            var week = _getDays(this.props.data.type, timestamp);
+            var _props = _.clone(props);
+            props.week = _getDays(props.data.type, timestamp);
+            
             return (
-                <div data-view="calendar-week-view" style={{width: "33.33%"}} ref={key}>
+                <div data-view="calendar-week-view" style={{width: "33.33%"}} ref={key}>    
                     <nav role="navigation">
-                        <Calendar.Menu week={week} data={this.props.data} onClick={this.props.callback.onClickDate} />
+                        <Calendar.Menu week={props.week} data={props.data} onClick={props.callback.onClickDate} />
                     </nav>
-                    <Calendar.Week.Content week={week} data={this.props.data} />
+                    <Calendar.Week.Content week={props.week} data={props.data} />
                 </div>
             );
         }.bind(this));
@@ -389,18 +463,18 @@ Calendar.Week = React.createClass({
 
 Calendar.Week.Content = React.createClass({
 
-    _gotoDay: function(status) {
+    _scrollToDay: function(status) {
         // @FIXME : conflict with other Scroll Call
         // Use dispatcher to handle these events
-        // _goto.call(this, "Day");
+        // _scrollTo.call(this, "Day");
     },
 
     componentDidMount: function() {
-        this._gotoDay();
+        this._scrollToDay();
     },
     
     componentDidUpdate: function() {
-        this._gotoDay();
+        this._scrollToDay();
     },
     
     _handleScroll: function() {
@@ -435,39 +509,75 @@ Calendar.Week.Content = React.createClass({
     }
 });
 
-Calendar.Menu = React.createClass({
+
+Calendar.Breadcrumb = React.createClass({
+
+    getDefaultProps: function() {
+        format: "MMMM"
+    },
+    
+    _handleClick: function() {
+        var data = _CalendarGoBackData(this.props.data);
+        this.props.onClick.call(this, data)
+    },
+    
+    _getLabel: function() {
+        return moment(this.props.active).format(this.props.format);
+    },
     
     render: function() {
-        
-        var props = [];
-        
+        return (
+            <aside className="breadcrumb">
+                <a onClick={this._handleClick} className="breadcrumb-item">{this._getLabel()}</a>
+            </aside>
+        );
+    }
+});
+
+Calendar.Menu = React.createClass({
+    
+    // Create Blank Days
+    _rangeDays: function() {
         while(this.props.week.length < 7) {
             this.props.week.push(null);
         }
+    },
+    
+    _getProps: function(timestamp, index) {
+        return {
+            timestamp: timestamp,
+            className: _getDayStatus(timestamp, this.props.data),
+            onClick: this.props.onClick
+        };
+    },
+    
+    componentWillMount: function() {
+        this._rangeDays()
+    },
+    
+    componentWillUpdate: function() {
+        this._rangeDays()
+    },
+    
+    render: function() {
         
-        
-        var _getProps = function(timestamp, index) {
-            return {
-                timestamp: timestamp,
-                className: _getDayStatus(timestamp, this.props.data),
-                onClick: this.props.onClick
-            };
-        }.bind(this);
+        var commom = [];
         
         var header = this.props.week.map(function(timestamp, index) {
-            props.push(_getProps(timestamp, index));
+            commom.push(this._getProps(timestamp, index));
+            var props = _.clone(commom[index]);
             return (
-                <Calendar.Menu.Header {...props[index]} />
+                <Calendar.Menu.Header {...props} />
             );
         }.bind(this));
 
         var content = this.props.week.map(function(timestamp, index) {
+            var props = _.clone(commom[index]);
             return (
-                <Calendar.Menu.Date {...props[index]} />
+                <Calendar.Menu.Date {...props} />
             );
         });
         
-        // var content = header = []
         return (
             <table data-view="calendar-menu">
                 <thead>
@@ -482,7 +592,7 @@ Calendar.Menu = React.createClass({
                 </tbody>
                 <tfoot>
                     <tr>
-                        <Calendar.Menu.Footer value={this.props.data.active} />
+                        <Calendar.Menu.Footer active={this.props.data.active} />
                     </tr>
                 </tfoot>
             </table>
@@ -540,14 +650,8 @@ Calendar.Menu.Date = React.createClass({
 
 Calendar.Menu.Footer = React.createClass({
     
-    getDefaultProps: function() {
-        return {
-            format: DATE_FORMAT_FULL
-        }
-    },
-    
     _getLabel: function() {
-        return moment(this.props.value).format(this.props.format);
+        return moment(this.props.active).format(this.props.format);
     },
     
     render: function() {
