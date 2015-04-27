@@ -329,11 +329,21 @@ Calendar.Month = React.createClass({
                 data: props.data,
                 days: _getDays(props.data.type, timestamp)
             };
+            var _header = (function(display_header) {
+                if (display_header) {
+                    return [(
+                        <nav role="navigation">
+                            <Calendar.Menu {..._getProps("Calendar.Menu", _props)} />
+                        </nav>
+                    )];
+                }
+                return "";
+                
+            })(key == "active");
+            
             return (
                 <div data-view="calendar-month-item" style={{width: "33.33%"}} ref={key}>
-                    <nav role="navigation">
-                        <Calendar.Menu {..._getProps("Calendar.Menu", _props)} />
-                    </nav>
+                    {_header}
                     <Calendar.Month.Content {..._getProps("Calendar.Month.Content", _props)} />
                 </div>
             );
