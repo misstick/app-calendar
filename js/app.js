@@ -8,6 +8,6 @@ var Test = require('./modules/test.js');
 var date = moment();
 
 React.render(
-    <Calendar type="Week" />,
+    <Calendar type="Month" />,
     document.getElementById('calendar-container')
 );

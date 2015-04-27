@@ -17,14 +17,16 @@ var DATE_FORMAT_YEAR = "YYYY";
 var DATE_FORMAT_MONTH = "MMMM";
 var DATE_FORMAT_KEY = "YYYYMD";
 
+var DATE_FORMAT_TEST = "D MM YYYY"
+
 // @TODO : use this to get Days into Year && Home Views
 var _getDays = function(type, timestamp) {
     var result = [];
     var method = type.toLowerCase();
-    var first = moment(timestamp).startOf("week");
-    var last = moment(timestamp).endOf("week");
+    var first = moment(timestamp).startOf(type);
+    var last = moment(timestamp).endOf(type);
     
-    // console.log(_toDateString(first), _toDateString(timestamp), _toDateString(last));
+    // console.log("(" + _toDateString(timestamp, DATE_FORMAT_TEST) + ")get days from :", _toDateString(first, DATE_FORMAT_TEST), "to", _toDateString(last, DATE_FORMAT_TEST));
     
     var day = first;
     var month = day.month();
@@ -39,18 +41,18 @@ var _CalendarData = function(data) {
     var result = {active: data.active};
     if (data.type == "Week") {
         var start = moment(data.active).day();
-        result.previous = moment(data.active).day(start - 7).valueOf();
-        result.next = moment(data.active).day(start + 7).valueOf();
+        result.first = moment(data.active).day(start - 7).valueOf();
+        result.last = moment(data.active).day(start + 7).valueOf();
         
     } else if (data.type == "Month") {
         var start = moment(data.active).month();
-        result.previous = moment(data.active).month(start - 1).valueOf();
-        result.next = moment(data.active).month(start + 1).valueOf();
+        result.first = moment(data.active).month(start - 1).valueOf();
+        result.last = moment(data.active).month(start + 1).valueOf();
         
     } else if (data.type == "Year") {
         var start = moment(data.active).year();
-        result.previous =  moment(data.active).year(start - 1).valueOf();
-        result.next =  moment(data.active).year(start + 1).valueOf();
+        result.first =  moment(data.active).year(start - 1).valueOf();
+        result.last =  moment(data.active).year(start + 1).valueOf();
     }
     return result;
 };
@@ -69,8 +71,8 @@ var _getDayStatus = function(timestamp, data) {
     return result.join(" ");
 }
 
-var _toDateString = function(timestamp) {
-    return moment(timestamp).format(DATE_FORMAT_ALL);
+var _toDateString = function(timestamp, format) {
+    return moment(timestamp).format(format || DATE_FORMAT_ALL);
 }
 
 var _getId = function(type, timestamp) {
@@ -251,7 +253,7 @@ var Calendar = React.createClass({
     //     // this._set_active({ weekday: Math[_floor](weekday_tmp)});
     // },
     
-    _getViewProps: function(props) {
+    _getProps: function(props) {
         var _views = {}
         _views["Calendar.Breadcrumb"] = {
             "format": _CalendarFormat("Calendar.Breadcrumb", this.state.type),
@@ -289,7 +291,7 @@ var Calendar = React.createClass({
     },
 
     render: function() {
-        var _props = this._getViewProps({
+        var _props = this._getProps({
             data: this.state,
             weeks: _CalendarData(this.state)
         });
@@ -312,18 +314,37 @@ Calendar.Year = React.createClass({
 
 Calendar.Month = React.createClass({
     
+    filterProps: _filterProps,
+    
     render: function() {
-        console.log("Calendar.Month.render", this.props)
+
+        var props = _.omit(this.props, "_views");
         
+        var _getProps = this.filterProps;
+        
+        // console.log("Calendar.Month.render", _toDateString(props.weeks.first), _toDateString(props.weeks.last))
+        
+        var content = _.map(this.props.weeks, function(timestamp, key) {
+            var _props = {
+                data: props.data,
+                days: _getDays(props.data.type, timestamp)
+            };
+            return (
+                <div data-view="calendar-month-item" style={{width: "33.33%"}} ref={key}>
+                    <nav role="navigation">
+                        <Calendar.Menu {..._getProps("Calendar.Menu", _props)} />
+                    </nav>
+                    <Calendar.Month.Content {..._getProps("Calendar.Month.Content", _props)} />
+                </div>
+            );
+        });
         
         return (
-            <div data-view="calendar-month-view" className="main-view">
-                <Calendar.Breadcrumb data={this.props.data} onClick={this.props.onClick} />
+            <div data-view="calendar-months" className="main-view">
+                <Calendar.Breadcrumb {..._getProps("Calendar.Breadcrumb", props)} />
                 <div className="scroll-view" ref="scroll-view" style={{overflow: "hidden"}}>
                     <div className="scroller" style={{width: "300%"}}>
-                        
-                        <Calendar.Month.Content {...this.props} />
-            
+                        {content}
                     </div>
                 </div>
             </div>
@@ -333,7 +354,10 @@ Calendar.Month = React.createClass({
 
 Calendar.Month.Content = React.createClass({
     
+    filterProps: _filterProps,
+    
     render: function() {
+        
         return (
                         
                 <table>
@@ -436,28 +460,30 @@ Calendar.Week = React.createClass({
 
         var props = _.omit(this.props, "_views");
         
-        var type = this.props.data.type;
+        var _getProps = this.filterProps;
         
         var content = _.map(this.props.weeks, function(timestamp, key) {
-            var props = { 
-                data: this.props.data,
-                week: _getDays(type, timestamp)
+            var _props = { 
+                data: props.data,
+                days: _getDays(props.data.type, timestamp)
             };
             return (
-                <div data-view="calendar-week-view" style={{width: "33.33%"}} ref={key}>
+                <div data-view="calendar-week" style={{width: "33.33%"}} ref={key}>
                     <nav role="navigation">
-                        <Calendar.Menu {...this.filterProps("Calendar.Menu", props)} />
+                        // @TODO : n'afficher ce menu q'une seule fois
+                        // lorsque l'on est en vue mois
+                        <Calendar.Menu {..._getProps("Calendar.Menu", _props)} />
                     </nav>
-                    <Calendar.Week.Content {...this.filterProps("Calendar.Week.Content", props)} />
+                    <Calendar.Week.Content {..._getProps("Calendar.Week.Content", _props)} />
                 </div>
             );
-        }.bind(this));
+        });
 
         // var _handleScroll = _.debounce(this._handleScroll, SCROLL_DEBOUNCE);
         // onScroll={_handleScroll}
         return (
-            <div data-view="calendar-weeks-view" className="main-view">
-                <Calendar.Breadcrumb {...this.filterProps("Calendar.Breadcrumb", props)} />
+            <div data-view="calendar-weeks" className="main-view">
+                <Calendar.Breadcrumb {..._getProps("Calendar.Breadcrumb", props)} />
                 <div className="scroll-view" ref="scroll-view" style={{overflow: "hidden"}}>
                     <div className="scroller" style={{width: "300%"}}>
                         { content }
@@ -489,7 +515,7 @@ Calendar.Week.Content = React.createClass({
     },
     
     render: function() {
-        var content = this.props.week.map(function(day, index) {
+        var content = this.props.days.map(function(day, index) {
             var props = {
                 day: day,
                 active: _getDayStatus(day, {active: this.props.data.active})
@@ -525,8 +551,6 @@ Calendar.Breadcrumb = React.createClass({
         }
     },
     
-    filterProps: _filterProps,
-    
     _handleClick: function() {
         var data = _CalendarGoBackData(this.props.data);
         this.props.onClick.call(this, data);
@@ -537,6 +561,7 @@ Calendar.Breadcrumb = React.createClass({
     },
     
     render: function() {
+        console.log("Calendar.Breadcrumb", this.props)
         return (
             <aside className="breadcrumb">
                 <a onClick={this._handleClick} className="breadcrumb-item">{this._getLabel()}</a>
@@ -549,18 +574,28 @@ Calendar.Menu = React.createClass({
     
     // Create Blank Days
     _rangeDays: function() {
-        while(this.props.week.length < 7) {
-            this.props.week.push(null);
+        var days_per_week = 7;
+        
+        while(this.props.days.length < days_per_week) {
+            this.props.days.push(null);
+        }
+        if (this.props.days.length > days_per_week) {
+            this.props.days = this.props.days.splice(0, days_per_week);
         }
     },
     
     filterProps: _filterProps,
     
     getProps: function(key, data) {
-        var data = _.extend(data || {}, {
-            className: _getDayStatus(data.timestamp, this.props.data)
-        });
-        return this.filterProps(key, data);
+        var data = data || {};
+        var props = {data: this.props.data};
+        
+        if (props.data.type == "Week") {
+            var data = _.extend(data, {
+                className: _getDayStatus(data.timestamp, props.data)
+            });
+        }
+        return this.filterProps(key, _.extend(props, data));
     },
     
     componentWillMount: function() {
@@ -572,31 +607,35 @@ Calendar.Menu = React.createClass({
     },
     
     render: function() {
+        
+        // @TODO : n'afficher qu'un seul menu pour cette vvue
+        
         var commom = [];
+        var header, content, footer = "";
         
         var _getProps = this.getProps;
         
-        var header = this.props.week.map(function(timestamp, index) {
-            var props = _getProps("Calendar.Menu.Header", {timestamp: timestamp});
+        header = this.props.days.map(function(timestamp, index) {
             return (
-                <Calendar.Menu.Header {...props} />
+                <Calendar.Menu.Header {..._getProps("Calendar.Menu.Header", {timestamp: timestamp})} />
             );
-        });
+        }.bind(this));
+        
+        if (this.props.data.type == "Week") {
+            content = this.props.days.map(function(timestamp, index) {
+                var props = _getProps("Calendar.Menu.Date", {timestamp: timestamp});
+                return (
+                    <Calendar.Menu.Date {...props} />
+                );
+            });
+        }
+        
+        footer = (function() {
+            return (
+                <Calendar.Menu.Footer {..._getProps("Calendar.Menu.Footer")} />
+            );
+        })();
 
-        var content = this.props.week.map(function(timestamp, index) {
-            var props = _getProps("Calendar.Menu.Date", {timestamp: timestamp});
-            return (
-                <Calendar.Menu.Date {...props} />
-            );
-        });
-        
-        var footer = (function(props) {
-            var props = _getProps("Calendar.Menu.Footer", props.data);
-            return (
-                <Calendar.Menu.Footer {...props} />
-            );
-        })(this.props);
-        
         return (
             <table data-view="calendar-menu">
                 <thead>
@@ -622,16 +661,26 @@ Calendar.Menu = React.createClass({
 Calendar.Menu.Header = React.createClass({
     
     _handleClick: function() {
-        console.log(this.props)
-        // this.props.onClick.call(this, {
-       //      timestamp: this.props.timestamp
-       //  });
+        this.props.onClick.call(this, {
+            timestamp: this.props.timestamp
+        });
     },
     
     render: function() {
+        console.log("Calendar.Menu.Header", this.props)
+        
+        // Empty Days
         if (!this.props.timestamp) {
             return (
                 <th></th>
+            );
+        }
+        
+        if (this.props.data.type == "Month") {
+            return (
+                <th>
+                    {moment(this.props.timestamp).format("dd")}
+                </th>
             );
         }
         
@@ -676,7 +725,7 @@ Calendar.Menu.Footer = React.createClass({
     },
     
     _getLabel: function() {
-        return moment(this.props.active).format(this.props.format);
+        return moment(this.props.active).format(DATE_FORMAT_ALL);
     },
     
     render: function() {
@@ -729,7 +778,7 @@ Calendar.Week.Day = React.createClass({
         }.bind(this))(this.props);
         
         return (
-            <div data-view="day-view">
+            <div data-view="calendar-day">
                 {timer}
                 <table data-timestamp={day}>
                     <tbody>

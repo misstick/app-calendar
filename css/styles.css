@@ -184,16 +184,16 @@
             color: white;
         }
         
-        [data-view="calendar-week-view"] .scroller {
+        [data-view="calendar-week"] .scroller {
             overflow: hidden;
         }
-        .scroller [data-view="day-view"] {
+        .scroller [data-view="calendar-day"] {
             width: 14.286%;
             overflow: auto;
             position: relative;
             float: left;
         }
-        [data-view="day-view"] th[scope=row] {
+        [data-view="calendar-day"] th[scope=row] {
             color: #aaa;
             font-weight: normal;
             font-size: 0.9em;
@@ -205,20 +205,20 @@
         th span: margin: line-height * -1.5
         table: margin: 2*line-height line-height 0
 */
-        [data-view="day-view"] table {
+        [data-view="calendar-day"] table {
             border-collapse: collapse;
             width: 100%;
             margin-top: 2em;
         }
-        [data-view="day-view"] th[scope=row] span {
+        [data-view="calendar-day"] th[scope=row] span {
             margin: -1.5em 0.5em 0.5em;
             display: block;
         }
-        [data-view="day-view"] td {
+        [data-view="calendar-day"] td {
             position: relative;
             border-top: solid 1px #ccc;
         }
-        [data-view="day-view"] .event {
+        [data-view="calendar-day"] .event {
             position: absolute;
             background: rgba(0, 100, 255, 0.7);
             border-left: solid 1px blue;
@@ -227,15 +227,15 @@
             left: 0;
             right: 0;
         }
-        [data-view="day-view"] .event h4,
-        [data-view="day-view"] .event address  {
+        [data-view="calendar-day"] .event h4,
+        [data-view="calendar-day"] .event address  {
             padding: 0;
             margin: 0;
         }
 /*
             ici, (var)border-left: 6em
         */
-        [data-view="day-view"] #current-timer {
+        [data-view="calendar-day"] #current-timer {
             font-size: 0.8em;
             border-bottom: solid 1px red;
             color: red;
@@ -244,7 +244,7 @@
             margin: -1em 0 0;
             box-sizing: border-box;
         }
-        [data-view="day-view"] #current-timer span {
+        [data-view="calendar-day"] #current-timer span {
             font-weight: bold;
             display: inline-block;
             height: 1em;
@@ -254,31 +254,31 @@
         }
         
         /* MonthView */
-        [data-view="month-view"] {
+        [data-view="calendar-month"] {
             text-align: center;
             font-size: 0.8em;
         }
-        [data-view="calendar-month-view"] nav tbody:empty {
+        [data-view="calendar-month"] nav tbody:empty {
             height: 0.5em;
             display: block;
         }
-        [data-view="month-view"] table {
+        [data-view="calendar-month"] table {
             width: 100%;
             border-collapse: collapse;
             margin: 1em 0;
         }
-        [data-view="month-view"] caption {
+        [data-view="calendar-month"] caption {
             text-transform: uppercase;
             position: relative;
             display: inline-block;
         }
-        [data-view="month-view"] table.active caption {
+        [data-view="calendar-month"] table.active caption {
             color: red;
         }
 /*
         (var)borderGray: #ddd
         */
-        [data-view="month-view"] td {
+        [data-view="calendar-month"] td {
             box-sizing: border-box;
             height: 4em;
             border-top: solid 1px #ddd;
@@ -286,42 +286,42 @@
             padding: 1em;
             position: relative;
         }
-        [data-view="month-view"] td:empty{
+        [data-view="calendar-month"] td:empty{
             background: white;
             border-color: transparent;
         }
-        [data-view="month-view"] td span {
+        [data-view="calendar-month"] td span {
             position: relative;
             z-index: 1;
         }
 /*        [data-view=calendar-month-view] {
             overflow: auto;
         }*/
-        [data-view=calendar-week-view] {
+        [data-view="calendar-week"] {
             float: left;
         }
         
 
-        [data-view="event-view"] {
+        [data-view="calendar-event"] {
             padding: 1em;
         }
-        [data-view="event-view"] h1 {
+        [data-view="calendar-event"] h1 {
             padding-top: 0;
             font-size: 1.2em;
         }
-        [data-view="event-view"] div,
-        [data-view="event-view"] p,
-        [data-view="event-view"] address {
+        [data-view="calendar-event"] div,
+        [data-view="calendar-event"] p,
+        [data-view="calendar-event"] address {
             margin: 0;
             padding: 0 0 1em;
         }
-        [data-view="event-view"] address {
+        [data-view="calendar-event"] address {
             color: red;
         }
-        [data-view="event-view"] .event-date {
+        [data-view="calendar-event"] .event-date {
             color: #aaa;
         }
-        [data-view="event-view"] article {
+        [data-view="calendar-event"] article {
             padding: 1em 0;
             border-top: solid 1px #ddd;
         }
