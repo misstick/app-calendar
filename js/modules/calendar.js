@@ -94,28 +94,9 @@ var _getState = function(obj0, obj1) {
     return data;
 }
 
-var _getViewProps = function(props) {
-    var _props = {};
-    var _propsKeys = _.keys(props);
-    var _viewKeys = ["Menu", "Week.Content", "Breadcrumb"];
-
-    _viewKeys.forEach(function(view) {
-        _props[view] = {};
-        _propsKeys.forEach(function(prop) {
-            var value = this.props[prop][view];
-            if (!_.isUndefined(value)) {
-                _props[view][prop] = value;
-            }
-
-        }.bind(this));
-    }.bind(this));
-    return _props;
-}
-        
-
 var _CalendarFormat = function(view, type) {
     var result;
-    if (view == "Breadcrumb") {
+    if (view == "Calendar.Breadcrumb") {
         switch (type) {
             case "Week":
                 result = DATE_FORMAT_MONTH;
@@ -126,7 +107,7 @@ var _CalendarFormat = function(view, type) {
                 break;
         }
     }
-    if (view == "Menu.Footer") {
+    if (view == "Calendar.Menu.Footer") {
         switch (type) {
             case "Week":
                 result = DATE_FORMAT_ALL;
@@ -167,6 +148,30 @@ var _CalendarGoBackData = function(data) {
             break;
     }
     return result;
+}
+
+var _filterProps = function(key, data) {
+    var data = _.clone(data || {});
+    var views = _.clone(this.props._views || {});
+    
+    var _filter = function(key, props) {
+        return _.omit(props, function(_value, _key) {
+            return _key.indexOf(key) == -1;
+        });
+    }
+    
+    // Get ChildViews
+    var _views = _filter(key, views);
+    
+    // Separate properties 
+    // form MainView to ChildViews
+    var _isViewProps = _views[key] != undefined;
+    if (_isViewProps) {
+        _.extend(data, _views[key]);
+        delete _views[key];
+    }
+    
+    return (_.isEmpty(_views)) ? data : _.extend(data, { _views: _views });
 }
 
 var _scrollTo = function(type) {
@@ -246,32 +251,31 @@ var Calendar = React.createClass({
     //     // this._set_active({ weekday: Math[_floor](weekday_tmp)});
     // },
     
-    _getViewProps: function() {
-        
-        var props = {};
-        props.data = this.state;
-        props.weeks = _CalendarData(this.state);
-        
-        props.format =  {
-            "Breadcrumb": _CalendarFormat("Breadcrumb", this.state.type),
-            "Menu.Footer": _CalendarFormat("Menu.Footer", this.state.type)
+    _getViewProps: function(props) {
+        var _views = {}
+        _views["Calendar.Breadcrumb"] = {
+            "format": _CalendarFormat("Calendar.Breadcrumb", this.state.type),
+            "onClick": this._updateMainView
         };
-        props.callback = {
-            "Breadcrumb": this._updateMainView
+        _views["Calendar.Menu.Footer"] = {
+            "format": _CalendarFormat("Calendar.Menu.Footer", this.state.type)
         };
         
-        //@TODO : passer une valeur pour le formatage du breadcrumb en cours
-        // il s'agira d'un state pour la vue Breadcrumb
         if (this.state.type == "Week") {
-            props.callback["Menu.Header"] = {
+            _views["Calendar.Menu.Header"] = {
                 "onClick": this._selectDate
             };
-            props.callback["Week.Content"] = {
+            _views["Calendar.Menu.Date"] = {
+                "onClick": this._selectDate
+            };
+            _views["Calendar.Week.Content"] = {
                 "onScroll": _.debounce(this._handleScroll, SCROLL_DEBOUNCE)
             };
         }
         
-        return props;
+        return _.extend(props, {
+            _views: _views
+        });
     },
     
     _selectDate: function(data) {
@@ -285,7 +289,10 @@ var Calendar = React.createClass({
     },
 
     render: function() {
-        var _props = this._getViewProps();
+        var _props = this._getViewProps({
+            data: this.state,
+            weeks: _CalendarData(this.state)
+        });
         return (        
             React.createElement(Calendar[this.state.type], _props)
         );
@@ -311,7 +318,7 @@ Calendar.Month = React.createClass({
         
         return (
             <div data-view="calendar-month-view" className="main-view">
-                <Calendar.Breadcrumb data={this.props.data} onClick={this.props.callback.onClickBreadcrumb} />
+                <Calendar.Breadcrumb data={this.props.data} onClick={this.props.onClick} />
                 <div className="scroll-view" ref="scroll-view" style={{overflow: "hidden"}}>
                     <div className="scroller" style={{width: "300%"}}>
                         
@@ -398,7 +405,7 @@ Calendar.Week = React.createClass({
         // Use dispatcher to handle these events
         _scrollTo.call(this, "Week");
     },
-
+    
     componentDidMount: function() {
         this._scrollToWeek();
     },
@@ -421,37 +428,37 @@ Calendar.Week = React.createClass({
         // => le render re-modiefiera tout
     },
     
-    _getViewProps: function() {
-        return _getViewProps();
-    },
+    // @TODO : surclasser React.class
+    // et faire hériter ttes les vues de cette méthode
+    filterProps: _filterProps,
     
     render: function() {
+
+        var props = _.omit(this.props, "_views");
         
-        var props = this._getViewProps();
-        console.log("Calendar.Week", props)
-        
-        var props = _.omit(this.props, "weeks");
+        var type = this.props.data.type;
         
         var content = _.map(this.props.weeks, function(timestamp, key) {
-            var _props = _.clone(props);
-            props.week = _getDays(props.data.type, timestamp);
-            
+            var props = { 
+                data: this.props.data,
+                week: _getDays(type, timestamp)
+            };
             return (
-                <div data-view="calendar-week-view" style={{width: "33.33%"}} ref={key}>    
+                <div data-view="calendar-week-view" style={{width: "33.33%"}} ref={key}>
                     <nav role="navigation">
-                        <Calendar.Menu week={props.week} data={props.data} onClick={props.callback.onClickDate} />
+                        <Calendar.Menu {...this.filterProps("Calendar.Menu", props)} />
                     </nav>
-                    <Calendar.Week.Content week={props.week} data={props.data} />
+                    <Calendar.Week.Content {...this.filterProps("Calendar.Week.Content", props)} />
                 </div>
             );
         }.bind(this));
 
-        var _handleScroll = _.debounce(this._handleScroll, SCROLL_DEBOUNCE);
-        
+        // var _handleScroll = _.debounce(this._handleScroll, SCROLL_DEBOUNCE);
+        // onScroll={_handleScroll}
         return (
             <div data-view="calendar-weeks-view" className="main-view">
-                <Calendar.Breadcrumb data={this.props.data} onClick={this.props.callback.onClickBreadcrumb} />
-                <div className="scroll-view" ref="scroll-view" style={{overflow: "hidden"}} onScroll={_handleScroll}>
+                <Calendar.Breadcrumb {...this.filterProps("Calendar.Breadcrumb", props)} />
+                <div className="scroll-view" ref="scroll-view" style={{overflow: "hidden"}}>
                     <div className="scroller" style={{width: "300%"}}>
                         { content }
                     </div>
@@ -495,11 +502,11 @@ Calendar.Week.Content = React.createClass({
             );
         }.bind(this));
         
-         // onScroll={this.props.onScroll}
-        var _handleScroll = _.debounce(this._handleScroll, SCROLL_DEBOUNCE);
-
+        // onScroll={this.props.onScroll}
+        // var _handleScroll = _.debounce(this._handleScroll, SCROLL_DEBOUNCE);
+        // onScroll={_handleScroll}
         return (
-            <div className="scroll-view" ref="scroll-view" style={{height: 300}} onScroll={_handleScroll}>
+            <div className="scroll-view" ref="scroll-view" style={{height: 300}}>
                 <div className="scroller" style={{width: "700%"}}>
                     { content }
                 </div>
@@ -513,12 +520,16 @@ Calendar.Week.Content = React.createClass({
 Calendar.Breadcrumb = React.createClass({
 
     getDefaultProps: function() {
-        format: "MMMM"
+        return {
+            format: "MMMM"
+        }
     },
+    
+    filterProps: _filterProps,
     
     _handleClick: function() {
         var data = _CalendarGoBackData(this.props.data);
-        this.props.onClick.call(this, data)
+        this.props.onClick.call(this, data);
     },
     
     _getLabel: function() {
@@ -543,12 +554,13 @@ Calendar.Menu = React.createClass({
         }
     },
     
-    _getProps: function(timestamp, index) {
-        return {
-            timestamp: timestamp,
-            className: _getDayStatus(timestamp, this.props.data),
-            onClick: this.props.onClick
-        };
+    filterProps: _filterProps,
+    
+    getProps: function(key, data) {
+        var data = _.extend(data || {}, {
+            className: _getDayStatus(data.timestamp, this.props.data)
+        });
+        return this.filterProps(key, data);
     },
     
     componentWillMount: function() {
@@ -560,23 +572,30 @@ Calendar.Menu = React.createClass({
     },
     
     render: function() {
-        
         var commom = [];
         
+        var _getProps = this.getProps;
+        
         var header = this.props.week.map(function(timestamp, index) {
-            commom.push(this._getProps(timestamp, index));
-            var props = _.clone(commom[index]);
+            var props = _getProps("Calendar.Menu.Header", {timestamp: timestamp});
             return (
                 <Calendar.Menu.Header {...props} />
             );
-        }.bind(this));
+        });
 
         var content = this.props.week.map(function(timestamp, index) {
-            var props = _.clone(commom[index]);
+            var props = _getProps("Calendar.Menu.Date", {timestamp: timestamp});
             return (
                 <Calendar.Menu.Date {...props} />
             );
         });
+        
+        var footer = (function(props) {
+            var props = _getProps("Calendar.Menu.Footer", props.data);
+            return (
+                <Calendar.Menu.Footer {...props} />
+            );
+        })(this.props);
         
         return (
             <table data-view="calendar-menu">
@@ -592,7 +611,7 @@ Calendar.Menu = React.createClass({
                 </tbody>
                 <tfoot>
                     <tr>
-                        <Calendar.Menu.Footer active={this.props.data.active} />
+                        {footer}
                     </tr>
                 </tfoot>
             </table>
@@ -603,13 +622,13 @@ Calendar.Menu = React.createClass({
 Calendar.Menu.Header = React.createClass({
     
     _handleClick: function() {
-        this.props.onClick.call(this, {
-            timestamp: this.props.timestamp
-        });
+        console.log(this.props)
+        // this.props.onClick.call(this, {
+       //      timestamp: this.props.timestamp
+       //  });
     },
     
     render: function() {
-        
         if (!this.props.timestamp) {
             return (
                 <th></th>
@@ -649,6 +668,12 @@ Calendar.Menu.Date = React.createClass({
 });
 
 Calendar.Menu.Footer = React.createClass({
+
+    getDefaultProps: function() {
+        return {
+            format: DATE_FORMAT_ALL
+        }
+    },
     
     _getLabel: function() {
         return moment(this.props.active).format(this.props.format);
