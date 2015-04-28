@@ -21,17 +21,17 @@ var DATE_FORMAT_TEST = "D MM YYYY"
 
 // @TODO : use this to get Days into Year && Home Views
 var _getWeeks = function(type, timestamp) {
-    var days_per_week = 7;
     var result = {};
     var method = type.toLowerCase();
     var first = moment(timestamp).startOf(type);
     var last = moment(timestamp).endOf(type);
-
-    var _range = function(week) {
-        while(week.length < days_per_week) {
-            week.push(null);
+    
+    var _range = function(week, len) {
+        var result = week || [];
+        while(result.length < len) {
+            result.push(null);
         }
-        return week;
+        return result;
     }
     
     // console.log("(" + _toDateString(timestamp, DATE_FORMAT_TEST) + ")get days from :", _toDateString(first, DATE_FORMAT_TEST), "to", _toDateString(last, DATE_FORMAT_TEST));
@@ -39,22 +39,15 @@ var _getWeeks = function(type, timestamp) {
     var day = first;
     var month = day.month();
     var week = day.week();
-    
-    // @FIXME : handle change Month only for MonthView && YearView
-    //day.month() == month
-    
-    while((day.isBefore(last) || day.isSame(last))) {
+    while(day.isBefore(last)) {
         if (result[week] == undefined || day.week() != week) {
             week = day.week();
-            result[week] = [];
+            result[week] = _range([], 7);
         }
-        result[week].push(day.valueOf());
+        var index = day.weekday();
+        result[week][index] = day.valueOf();
         day = day.add(1, "days");
     }
-    
-    // Each week must have 7 days long
-    _.each(result, _range);
-    
     return _.toArray(result);
 }
     
@@ -82,6 +75,8 @@ var _CalendarData = function(data) {
 };
 
 var _getDayStatus = function(timestamp, data) {
+    
+    // console.log("_getDayStatus", timestamp, data)
     var _isEqual = function(value0, value1) {
         return moment(value0).isSame(value1, "day");
     }
@@ -393,53 +388,50 @@ Calendar.Month.Content = React.createClass({
     
     filterProps: _filterProps,
     
-    _getLabel: function(timestamp) {
+    _getDate: function(timestamp) {
         if (timestamp) {
-            return [(<span>{moment(timestamp).format("D")}</span>)];
+            return (<span>{moment(timestamp).format("D")}</span>);
         }
+    },
+    
+    _getTitle: function(timestamp, index) {
+        var data = {
+            styles: {left: Math.ceil(index * 100 / 7) + "%"},
+            label: moment(timestamp).format("MMMM")
+        };
+        return (<caption style={data.styles}>{data.label}</caption>);
     },
     
     render: function() {
         
-        console.log("Calendar.Month.Content", this.props)
+        var title;
         
-        var content = this.props.weeks.map(function(timestamp, index) {
-            
+        var content = this.props.weeks.map(function(week) {
+            var cells = week.map(function(timestamp, index) {
+                if (title == undefined && timestamp) {
+                    title = this._getTitle(timestamp, index);
+                }
             // @TODO : className : prendre en compte le fait d'être en weekEnd ou pas
             // ajouter ce test à getDayStatus
-            
-            // @TODO : tronquer les semaines
-            // dans getDays : faire des tableaux de semaine
-            // [1,2,3], [4,5,6,7,8,9,10],[n...n+6]
-            // A chaque changement de tableau
-            
-            
-            var _props = {
-                className: ""
-            }
+                var _props = {
+                    className: _getDayStatus(timestamp, this.props.data),
+                    date: this._getDate(timestamp)
+                }
+                return (
+                    <td className={_props.className}>{_props.date}</td>
+                );
+            }.bind(this));
             
             return (
-                <td className={_props.className}>{this._getLabel(timestamp)}</td>
-            );
-            
+                <tr>{cells}</tr>
+            )
         }.bind(this))
-
-                      // <td></td>
-                      // <td></td>
-                      // <td></td>
-                      // <td></td>
-                      // <td></td>
-                      // <td className="week-end"></td>
-                      // <td className="week-end"><span>1</span></td>
         
         return (
-                        
-                <table>
-                  <caption>{}</caption>
-                  <tr>
-            {content}
-                  </tr>
-              </table>
+            <table>
+                {title}
+                {content}
+            </table>
         );
         
     }
