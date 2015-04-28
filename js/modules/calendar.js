@@ -294,9 +294,9 @@ var Calendar = React.createClass({
             _views["Calendar.Menu.Date"] = {
                 "onClick": this._selectDate
             };
-            _views["Calendar.Week.Content"] = {
-                "onScroll": _.debounce(this._handleScroll, SCROLL_DEBOUNCE)
-            };
+            // _views["Calendar.Week.Content"] = {
+            //     "onScroll": _.debounce(this._handleScroll, SCROLL_DEBOUNCE)
+            // };
         }
         
         return _.extend(props, {
@@ -447,18 +447,18 @@ Calendar.Month.Content = React.createClass({
 
 Calendar.Week = React.createClass({
     
-    _scrollToWeek: function(status) {
-        // @FIXME : conflict with other Scroll Call
-        // Use dispatcher to handle these events
-        _scrollTo.call(this, "Week");
-    },
+    // _scrollToWeek: function() {
+    //     // @FIXME : conflict with other Scroll Call
+    //     // Use dispatcher to handle these events
+    //     // _scrollTo.call(this, "Week");
+    // },
     
     componentDidMount: function() {
-        this._scrollToWeek();
+        // this._scrollToWeek();
     },
     
     componentDidUpdate: function() {
-        this._scrollToWeek();
+        // this._scrollToWeek();
     },
     
     _handleScroll: function() {
