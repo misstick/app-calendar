@@ -257,6 +257,7 @@
         [data-view="calendar-month"] {
             text-align: center;
             font-size: 0.8em;
+            padding: 1em 0;
         }
         [data-view="calendar-month"] nav tbody:empty {
             height: 0.5em;
@@ -265,12 +266,15 @@
         [data-view="calendar-month"] table {
             width: 100%;
             border-collapse: collapse;
-            margin: 1em 0;
         }
-        [data-view="calendar-month"] caption {
+        [data-view="calendar-month"] caption>span {
             text-transform: uppercase;
             position: relative;
-            display: inline-block;
+            display: block;
+            float: right;
+            text-align: left;
+            text-indent: 1em;
+            line-height: 2;
         }
         [data-view="calendar-month"] table.active caption {
             color: red;

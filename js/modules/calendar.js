@@ -369,9 +369,7 @@ Calendar.Month = React.createClass({
             }
 
             return (
-                <div data-view="calendar-month-item" style={{width: "33.33%"}} ref={key}>
-                    <Calendar.Month.Content {..._filter("Calendar.Month.Content", _props)} />
-                </div>
+                <Calendar.Month.Content {..._filter("Calendar.Month.Content", _props)} />
             );
         });
         
@@ -381,10 +379,8 @@ Calendar.Month = React.createClass({
                 <nav role="navigation">
                     {header}
                 </nav>
-                <div className="scroll-view" ref="scroll-view" style={{overflow: "hidden"}}>
-                    <div className="scroller" style={{width: "300%"}}>
-                        {content}
-                    </div>
+                <div data-view="calendar-month" className="scroll-view" ref="scroll-view" style={{overflow: "hidden"}}>
+                    {content}
                 </div>
             </div>
         );
@@ -401,22 +397,25 @@ Calendar.Month.Content = React.createClass({
         }
     },
     
-    _getTitle: function(timestamp, index) {
-        var data = {
-            styles: {left: Math.ceil(index * 100 / 7) + "%"},
-            label: moment(timestamp).format("MMMM")
+    _getMonth: function(timestamp, index) {
+        var isActive = moment(timestamp).month() == moment(this.props.data.active).month();
+        return {
+            styles: {width: Math.ceil((1 - index * 1 / 7) * 100) + "%"},
+            label: moment(timestamp).format("MMMM"),
+            className: (isActive) ? "active" : ""
         };
-        return (<caption style={data.styles}>{data.label}</caption>);
     },
     
     render: function() {
         
-        var title;
+        var month;
+        
+        //@TODO : tester si le mois ourant est actif ou non
         
         var content = this.props.weeks.map(function(week) {
             var cells = week.map(function(timestamp, index) {
-                if (title == undefined && timestamp) {
-                    title = this._getTitle(timestamp, index);
+                if (month == undefined && timestamp) {
+                    month = this._getMonth(timestamp, index);
                 }
             // @TODO : className : prendre en compte le fait d'être en weekEnd ou pas
             // ajouter ce test à getDayStatus
@@ -435,8 +434,8 @@ Calendar.Month.Content = React.createClass({
         }.bind(this))
         
         return (
-            <table>
-                {title}
+            <table className={month.className}>
+                <caption><span style={month.styles}>{month.label}</span></caption>
                 {content}
             </table>
         );
@@ -540,7 +539,7 @@ Calendar.Week.Content = React.createClass({
     },
     
     _handleScroll: function() {
-        var scroller = React.findDOMNode(this.refs["Scroller"]);
+        // var scroller = React.findDOMNode(this.refs["Scroller"]);
     },
     
     render: function() {
