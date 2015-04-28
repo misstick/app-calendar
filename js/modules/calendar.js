@@ -34,7 +34,7 @@ var _getWeeks = function(type, timestamp) {
         return week;
     }
     
-    // console.log("(" + _toDateString(timestamp, DATE_FORMAT_TEST) + ")get days from :", _toDateString(first, DATE_FORMAT_TEST), "to", _toDateString(last, DATE_FORMAT_TEST));
+    console.log("(" + _toDateString(timestamp, DATE_FORMAT_TEST) + ")get days from :", _toDateString(first, DATE_FORMAT_TEST), "to", _toDateString(last, DATE_FORMAT_TEST));
     
     var day = first;
     var month = day.month();
@@ -59,21 +59,24 @@ var _getWeeks = function(type, timestamp) {
 }
     
 var _CalendarData = function(data) {
-    var result = {active: data.active};
+    var result = [];
     if (data.type == "Week") {
         var start = moment(data.active).day();
-        result.first = moment(data.active).day(start - 7).valueOf();
-        result.last = moment(data.active).day(start + 7).valueOf();
+        result.push(moment(data.active).day(start - 7).valueOf());
+        result.push(data.active);
+        result.push(moment(data.active).day(start + 7).valueOf());
         
     } else if (data.type == "Month") {
         var start = moment(data.active).month();
-        result.first = moment(data.active).month(start - 1).valueOf();
-        result.last = moment(data.active).month(start + 1).valueOf();
+        result.push(moment(data.active).month(start - 1).valueOf());
+        result.push(data.active);
+        result.push(moment(data.active).month(start + 1).valueOf());
         
     } else if (data.type == "Year") {
         var start = moment(data.active).year();
-        result.first =  moment(data.active).year(start - 1).valueOf();
-        result.last =  moment(data.active).year(start + 1).valueOf();
+        result.push(moment(data.active).year(start - 1).valueOf());
+        result.push(data.active);
+        result.push(moment(data.active).year(start + 1).valueOf());
     }
     return result;
 };
@@ -480,6 +483,7 @@ Calendar.Week = React.createClass({
 
         var props = _.omit(this.props, "_views");
         
+        // @TODO : à mettre dans componentWillMount && componentWillUpdate
         var _getProps = this.filterProps;
         
         var content = _.map(this.props.weeks, function(timestamp, key) {
