@@ -305,7 +305,6 @@ var Calendar = React.createClass({
     },
     
     _selectDate: function(data) {
-        console.log("_selectDate", data)
         this.setState({
             "active": data.timestamp
         });
@@ -674,14 +673,6 @@ Calendar.Menu = React.createClass({
 
 Calendar.Menu.Header = React.createClass({
     
-    componentWillMount: function() {
-        this.props.label = this._getLabel();
-    },
-    
-    componentWillUpdate: function() {
-        this.props.label = this._getLabel();
-    },
-    
     _handleClick: function() {
         this.props.onClick.call(this, {
             timestamp: this.props.timestamp
@@ -711,21 +702,13 @@ Calendar.Menu.Header = React.createClass({
         
         return (
             <th className={this.props.className}>
-                <a onClick={this._handleClick}>{this.props.label}</a>
+                <a onClick={this._handleClick}>{this._getLabel()}</a>
             </th>
         );
     }
 });
 
 Calendar.Menu.Date = React.createClass({
-    
-    componentWillMount: function() {
-        this.props.label = this._getLabel();
-    },
-    
-    componentWillUpdate: function() {
-        this.props.label = this._getLabel();
-    },
     
     _getLabel: function() {
         return moment(this.props.timestamp).date();
@@ -747,7 +730,7 @@ Calendar.Menu.Date = React.createClass({
 
         return (
             <td>
-                <a onClick={this._handleClick} className={this.props.className}>{this.props.label}</a>
+                <a onClick={this._handleClick} className={this.props.className}>{this._getLabel()}</a>
             </td>
         );
     }
@@ -761,21 +744,13 @@ Calendar.Menu.Footer = React.createClass({
         }
     },
     
-    componentWillMount: function() {
-        this.props.label = this._getLabel();
-    },
-    
-    componentWillUpdate: function() {
-        this.props.label = this._getLabel();
-    },
-    
     _getLabel: function() {
         return moment(this.props.active).format(DATE_FORMAT_ALL);
     },
     
     render: function() {
         return (
-            <td colSpan="7"><h1>{this.props.label}</h1></td>
+            <td colSpan="7"><h1>{this._getLabel()}</h1></td>
         );
     }
 });
@@ -845,25 +820,37 @@ Calendar.Week.Timer = React.createClass({
         };
     },
     
-    to_decimal: function(label) {
+    _toHours: function(label) {
         var label = label.split(":");
         return label[0] * 1 + (label[1] * 1 / 60);
     },
     
-    get_coords: function(label) {
-        var time = this.to_decimal(label);
+    _getLabel: function() {
+        return moment(this.state.timestamp).format("HH:mm");
+    },
+    
+    _getCoords: function(label) {
+        var time = this._toHours(label);
         return {
-            left: "20%",
-            top: Math.ceil(time * this.props.scale),
-            width: "80%"
+            "left": "20%",
+            "top": Math.ceil(time * this.props.scale),
+            "width": "80%"
+        }
+    },
+    
+    _getProps: function() {
+        var label = this._getLabel();
+        var coords = this._getCoords(label);
+        return {
+            label: label,
+            coords: coords
         }
     },
     
     render: function() {
-        var label = moment(this.state.timestamp).format("HH:mm");
-        var coords = this.get_coords(label);
+        var props = this._getProps();
         return (
-            <div id="current-timer" style={coords}><span>{label}</span></div>
+            <div id="current-timer" style={props.coords}><span>{props.label}</span></div>
         );
     }
 });
