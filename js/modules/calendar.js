@@ -75,10 +75,14 @@ var _CalendarData = function(data) {
 };
 
 var _getDayStatus = function(timestamp, data) {
-    
-    // console.log("_getDayStatus", timestamp, data)
+    if (!timestamp) {
+        return;
+    }
     var _isEqual = function(value0, value1) {
         return moment(value0).isSame(value1, "day");
+    }
+    var _isWeekEnd = function(timestamp) {
+        return moment(timestamp).weekday() == 5 || moment(timestamp).weekday() == 6;
     }
     
     var result = [];
@@ -87,6 +91,9 @@ var _getDayStatus = function(timestamp, data) {
             result.push(statusName);
         }
     });
+    if (_isWeekEnd(timestamp)) {
+        result.push("week-end")
+    }
     return result.join(" ");
 }
 
