@@ -17,6 +17,20 @@
         .day-off {
             color: #ccc;
         }
+        
+        a.current {
+            color: red;
+        }
+        a.current.active {
+            border-color: red;
+            background-color: red;
+        }
+        a.active {
+            border-color: black;
+            background-color: black;
+            color: white;
+        }
+        
         .is-event:after,
         .day-off:after {
             content: ".";
@@ -35,7 +49,7 @@
             vertical-align: bottom;
             width: 100%;
             height: 100%;
-            line-height: 0.75;
+            line-height: 0.9;
         }
         
         .main-view {
@@ -159,7 +173,8 @@
         [data-view="calendar-menu"] .ellipsis {
             display: none;
         }
-        [data-view="calendar-menu"] td a {
+        [data-view="calendar-menu"] td a,
+        [data-view="calendar-month"] td a {
             display: inline-block;
             box-sizing: border-box;
             text-align: center;
@@ -168,19 +183,6 @@
             height: 28px;
             line-height: 30px;
             border-radius: 14px;
-        }
-        
-        [data-view="calendar-menu"] a.current {
-            color: red;
-        }
-        [data-view="calendar-menu"] a.current.active {
-            border-color: red;
-            background-color: red;
-        }
-        [data-view="calendar-menu"] a.active {
-            border-color: black;
-            background-color: black;
-            color: white;
         }
         
         [data-view="calendar-week"] .scroller {
@@ -286,7 +288,7 @@
             height: 4em;
             border-top: solid 1px #ddd;
             vertical-align: top;
-            padding: 1em;
+            padding: 0.5em 0 1em;
             position: relative;
         }
         [data-view="calendar-month"] td:empty{
