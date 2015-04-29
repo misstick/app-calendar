@@ -345,40 +345,37 @@ Calendar.Year = React.createClass({
 
 Calendar.Month = React.createClass({
     
-    filterProps: _filterProps,
-    
-    _getProps: function(timestamp) {
-        return {
-            weeks: _CalendarWeeks(this.props.data.type, timestamp)
+    _getProps: function(name, timestamp) {
+        var props = {};
+        if (timestamp) {
+            var weeks = _CalendarWeeks(this.props.data.type, timestamp);
+            if (name == "Calendar.Menu") {
+                weeks = [weeks[0]];
+            }
+            props.weeks = weeks;
         }
+        return _filterProps.call(this, name, props);
     },
     
     render: function() {
-        
-        var _filter = this.filterProps;
         
         var _getProps = this._getProps;
         
         var header;
         
         var content = _.map(this.props.weeks, function(timestamp, key) {
-            var _props = _getProps(timestamp);
-
             // Display Menu only once
             if (header == undefined) {
-                var __weeks = [_props.weeks[0]];
-                var __props = _.extend(_.clone(_props), {weeks: __weeks});
-                header = (<Calendar.Menu {..._filter("Calendar.Menu", __props)} />);
+                header = (<Calendar.Menu {..._getProps("Calendar.Menu", timestamp)} />);
             }
-
             return (
-                <Calendar.Month.Content {..._filter("Calendar.Month.Content", _props)} />
+                <Calendar.Month.Content {..._getProps("Calendar.Month.Content", timestamp)} />
             );
         });
         
         return (
             <div className="main-view">
-                <Calendar.Breadcrumb {..._filter("Calendar.Breadcrumb")} />
+                <Calendar.Breadcrumb {..._getProps("Calendar.Breadcrumb")} />
                 <nav role="navigation">
                     {header}
                 </nav>
@@ -392,43 +389,43 @@ Calendar.Month = React.createClass({
 
 Calendar.Month.Content = React.createClass({
     
-    filterProps: _filterProps,
-    
-    _getMonth: function(timestamp, index) {
-        var isActive = moment(timestamp).month() == moment(this.props.data.active).month();
-        return {
-            styles: {width: Math.ceil((1 - index * 1 / 7) * 100) + "%"},
-            label: moment(timestamp).format("MMMM"),
-            className: (isActive) ? "active" : ""
-        };
+    _getProps: function(key, timestamp) {
+        var props = {};
+        if (timestamp) {
+            props.timestamp = timestamp;
+        }
+        if (key == "Calendar.Month") {
+            var days = _.flatten(this.props.weeks);
+            var firstday = _.first(_.compact(days));
+            var weekday = moment(firstday).weekday();
+            _.extend(props, {
+                styles: {width: Math.ceil((1 - weekday * 1 / 7) * 100) + "%"},
+                label: moment(firstday).format("MMMM"),
+                className: (moment(firstday).month() == moment(this.props.data.active).month()) ? "active" : ""
+            });
+        }
+        return _filterProps.call(this, key, props);
     },
     
     render: function() {
+        var _getProps = this._getProps;
         
-        var month;
+        var _props =  _getProps("Calendar.Month")
         
         var content = this.props.weeks.map(function(week) {
             var cells = week.map(function(timestamp, index) {
-                var _props;
-                if (timestamp) {
-                    if (month == undefined) {
-                        month = this._getMonth(timestamp, index);
-                    }
-                    _props = {timestamp: timestamp};
-                } 
                 return (
-                    <Calendar.Month.Content.Date {...this.filterProps("Calendar.Month.Content.Date", _props)} />
+                    <Calendar.Month.Content.Date {..._getProps("Calendar.Month.Content.Date", timestamp)} />
                 );
-            }.bind(this));
-            
+            });
             return (
                 <tr>{cells}</tr>
             )
-        }.bind(this))
+        });
         
         return (
-            <table className={month.className}>
-                <caption><span style={month.styles}>{month.label}</span></caption>
+            <table className={_props.className}>
+                <caption><span style={_props.styles}>{_props.label}</span></caption>
                 {content}
             </table>
         );
@@ -497,27 +494,28 @@ Calendar.Week = React.createClass({
     
     // @TODO : surclasser React.class
     // et faire hériter ttes les vues de cette méthode
-    filterProps: _filterProps,
+    
+    _getProps: function(key, timestamp) {
+        var props = {
+            weeks: _CalendarWeeks(this.props.data.type, timestamp)
+        }
+        return _filterProps.call(this, key, props);
+    },
     
     render: function() {
-
-        var props = _.omit(this.props, "_views");
         
         // console.log("=>Calendar.Week", _toDateString(props.data.active))
         
         // @TODO : à mettre dans componentWillMount && componentWillUpdate
-        var _getProps = this.filterProps;
+        var _getProps = this._getProps;
         
         var content = _.map(this.props.weeks, function(timestamp, key) {
-            var _props = {
-                weeks: _CalendarWeeks(props.data.type, timestamp)
-            };
             return (
                 <div data-view="calendar-week" style={{width: "33.33%"}} ref={key}>
                     <nav role="navigation">
-                        <Calendar.Menu {..._getProps("Calendar.Menu", _props)} />
+                        <Calendar.Menu {..._getProps("Calendar.Menu", timestamp)} />
                     </nav>
-                    <Calendar.Week.Content {..._getProps("Calendar.Week.Content", _props)} />
+                    <Calendar.Week.Content {..._getProps("Calendar.Week.Content", timestamp)} />
                 </div>
             );
         });
@@ -526,7 +524,7 @@ Calendar.Week = React.createClass({
         // onScroll={_handleScroll}
         return (
             <div className="main-view">
-                <Calendar.Breadcrumb {..._getProps("Calendar.Breadcrumb", props)} />
+                <Calendar.Breadcrumb {..._getProps("Calendar.Breadcrumb")} />
                 <div className="scroll-view" ref="scroll-view" style={{overflow: "auto"}}>
                     <div className="scroller" style={{width: "300%"}}>
                         { content }
@@ -619,8 +617,6 @@ Calendar.Breadcrumb = React.createClass({
 
 Calendar.Menu = React.createClass({
     
-    filterProps: _filterProps,
-    
     getProps: function(key, data) {
         var timestamp = (data) ? data.timestamp : null;
         
@@ -630,7 +626,7 @@ Calendar.Menu = React.createClass({
             });
         }
         
-        return this.filterProps(key, data);
+        return _filterProps.call(this, key, data);
     },
     
     render: function() {
