@@ -20,7 +20,7 @@ var DATE_FORMAT_KEY = "YYYYMD";
 var DATE_FORMAT_TEST = "D MM YYYY"
 
 // @TODO : use this to get Days into Year && Home Views
-var _getWeeks = function(type, timestamp) {
+var _CalendarWeeks = function(type, timestamp) {
     var result = {};
     var method = type.toLowerCase();
     var first = moment(timestamp).startOf(type);
@@ -51,7 +51,7 @@ var _getWeeks = function(type, timestamp) {
     return _.toArray(result);
 }
     
-var _CalendarData = function(data) {
+var _CalendarDates = function(data) {
     var result = [];
     if (data.type == "Week") {
         var start = moment(data.active).day();
@@ -73,6 +73,41 @@ var _CalendarData = function(data) {
     }
     return result;
 };
+
+var _CalendarChildrenProps = function(view, data) {
+    var result = {};
+
+    if (data.type == "Week") {
+        result["Calendar.Breadcrumb"] = {
+            "format": DATE_FORMAT_MONTH,
+            "onClick": view._updateMainView
+        };
+        result["Calendar.Menu.Header"] = {
+            "onClick": view._selectDate
+        };
+        result["Calendar.Menu.Date"] = {
+            "onClick": view._selectDate
+        };
+        result["Calendar.Menu.Footer"] = {
+            "format": DATE_FORMAT_ALL
+        };
+        // _views["Calendar.Week.Content"] = {
+        //     "onScroll": _.debounce(this._handleScroll, SCROLL_DEBOUNCE)
+        // };
+    } else if (data.type == "Month") {
+        result["Calendar.Breadcrumb"] = {
+            "format": DATE_FORMAT_YEAR,
+            "onClick": view._updateMainView
+        };
+        result["Calendar.Menu.Footer"] = {
+            "format": DATE_FORMAT_MONTH_YEAR
+        };
+        result["Calendar.Month.Content.Date"] = {
+            "onClick": view._selectDate
+        };
+    }
+    return (_.isEmpty(result)) ? null : {_views: result};
+}
 
 var _getDayStatus = function(timestamp, data) {
     if (!timestamp) {
@@ -120,33 +155,6 @@ var _getState = function(obj0, obj1) {
         }
     });
     return data;
-}
-
-var _CalendarFormat = function(view, type) {
-    var result;
-    if (view == "Calendar.Breadcrumb") {
-        switch (type) {
-            case "Week":
-                result = DATE_FORMAT_MONTH;
-                break;
-            
-            case "Month":
-                result = DATE_FORMAT_YEAR;
-                break;
-        }
-    }
-    if (view == "Calendar.Menu.Footer") {
-        switch (type) {
-            case "Week":
-                result = DATE_FORMAT_ALL;
-                break;
-            
-            case "Month":
-                result = DATE_FORMAT_MONTH_YEAR;
-                break;
-        }
-    }
-    return result;
 }
 
 var _CalendarGoBackData = function(data) {
@@ -288,36 +296,7 @@ var Calendar = React.createClass({
     // },
     
     _getProps: function(props) {
-        var _views = {}
-        
-        _views["Calendar.Breadcrumb"] = {
-            "format": _CalendarFormat("Calendar.Breadcrumb", this.state.type),
-            "onClick": this._updateMainView
-        };
-        _views["Calendar.Menu.Footer"] = {
-            "format": _CalendarFormat("Calendar.Menu.Footer", this.state.type)
-        };
-        
-        if (this.state.type == "Week") {
-            _views["Calendar.Menu.Header"] = {
-                "onClick": this._selectDate
-            };
-            _views["Calendar.Menu.Date"] = {
-                "onClick": this._selectDate
-            };
-            // _views["Calendar.Week.Content"] = {
-            //     "onScroll": _.debounce(this._handleScroll, SCROLL_DEBOUNCE)
-            // };
-        } else if (this.state.type == "Month") {
-
-            _views["Calendar.Month.Content.Date"] = {
-                "onClick": this._selectDate
-            };
-        }
-        
-        return _.extend(props, {
-            _views: _views
-        });
+        return _.extend(props, _CalendarChildrenProps(this, this.state));
     },
     
     _selectDate: function(data) {
@@ -332,7 +311,7 @@ var Calendar = React.createClass({
     render: function() {
         var _props = this._getProps({
             data: this.state,
-            weeks: _CalendarData(this.state)
+            weeks: _CalendarDates(this.state)
         });
         return (        
             React.createElement(Calendar[this.state.type], _props)
@@ -343,10 +322,23 @@ var Calendar = React.createClass({
 
 Calendar.Year = React.createClass({
     
+    filterProps: _filterProps,
+    
     render: function() {
-        console.log("Calendar.Year.render")
+        
+        var header, content, footer = [];
+        
+        var _filter = this.filterProps;
+        console.log("Calendar.Year.render", this.props)
         return (
-            "PLOP"
+            <div className="main-view">
+                <nav role="navigation">
+                    {header}
+                </nav>
+                <div data-view="calendar-year" className="scroll-view" ref="scroll-view">
+                    {content}
+                </div>
+            </div>
         );
     }
 });
@@ -357,7 +349,7 @@ Calendar.Month = React.createClass({
     
     _getProps: function(timestamp) {
         return {
-            weeks: _getWeeks(this.props.data.type, timestamp)
+            weeks: _CalendarWeeks(this.props.data.type, timestamp)
         }
     },
     
@@ -385,12 +377,12 @@ Calendar.Month = React.createClass({
         });
         
         return (
-            <div data-view="calendar-months" className="main-view">
+            <div className="main-view">
                 <Calendar.Breadcrumb {..._filter("Calendar.Breadcrumb")} />
                 <nav role="navigation">
                     {header}
                 </nav>
-                <div data-view="calendar-month" className="scroll-view" ref="scroll-view" style={{overflow: "hidden"}}>
+                <div data-view="calendar-month" className="scroll-view" ref="scroll-view">
                     {content}
                 </div>
             </div>
@@ -518,7 +510,7 @@ Calendar.Week = React.createClass({
         
         var content = _.map(this.props.weeks, function(timestamp, key) {
             var _props = {
-                weeks: _getWeeks(props.data.type, timestamp)
+                weeks: _CalendarWeeks(props.data.type, timestamp)
             };
             return (
                 <div data-view="calendar-week" style={{width: "33.33%"}} ref={key}>
@@ -533,7 +525,7 @@ Calendar.Week = React.createClass({
         // var _handleScroll = _.debounce(this._handleScroll, SCROLL_DEBOUNCE);
         // onScroll={_handleScroll}
         return (
-            <div data-view="calendar-weeks" className="main-view">
+            <div className="main-view">
                 <Calendar.Breadcrumb {..._getProps("Calendar.Breadcrumb", props)} />
                 <div className="scroll-view" ref="scroll-view" style={{overflow: "auto"}}>
                     <div className="scroller" style={{width: "300%"}}>
