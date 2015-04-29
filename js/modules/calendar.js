@@ -453,7 +453,7 @@ Calendar.Month.Content.Date = React.createClass({
         });
     },
     
-    _getClassName: function() {
+    _getClassName: function() { 
         return _getDayStatus(this.props.timestamp, this.props.data);
     },
     
@@ -468,7 +468,7 @@ Calendar.Month.Content.Date = React.createClass({
             )
         }
         return (
-            <td className={this._getClassName}><a onClick={this._handleClick}>{this._getLabel()}</a></td>
+            <td><a onClick={this._handleClick} className={this._getClassName()}>{this._getLabel()}</a></td>
         );
     }
 });
