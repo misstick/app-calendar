@@ -58,8 +58,7 @@
             color: inherit;
             text-decoration: underline;
         }
-        .main-view nav a:hover,
-        .main-view .breadcrumb a:hover {
+        .main-view a:hover {
             cursor: pointer;
         }
         .main-view .breadcrumb {

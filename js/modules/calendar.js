@@ -199,7 +199,16 @@ var _filterProps = function(key, data) {
         delete _views[key];
     }
     
-    return (_.isEmpty(_views)) ? data : _.extend(data, { _views: _views });
+    if (_.isEmpty(_views)) {
+        return _.extend(data, {
+            data: this.props.data
+        });
+    }
+    
+    return _.extend(data, { 
+        _views: _views,
+        data: this.props.data
+    });
 }
 
 var _scrollTo = function(type) {
@@ -299,6 +308,11 @@ var Calendar = React.createClass({
             // _views["Calendar.Week.Content"] = {
             //     "onScroll": _.debounce(this._handleScroll, SCROLL_DEBOUNCE)
             // };
+        } else if (this.state.type == "Month") {
+
+            _views["Calendar.Month.Content.Date"] = {
+                "onClick": this._selectDate
+            };
         }
         
         return _.extend(props, {
@@ -307,9 +321,8 @@ var Calendar = React.createClass({
     },
     
     _selectDate: function(data) {
-        this.setState({
-            "active": data.timestamp
-        });
+        console.log("_selectDate", data)
+        this.setState(data);
     },
     
     _updateMainView: function(data) {
@@ -343,10 +356,8 @@ Calendar.Month = React.createClass({
     filterProps: _filterProps,
     
     _getProps: function(timestamp) {
-        var props = _.omit(this.props, "_views");
         return {
-            data: props.data,
-            weeks: _getWeeks(props.data.type, timestamp)
+            weeks: _getWeeks(this.props.data.type, timestamp)
         }
     },
     
@@ -391,12 +402,6 @@ Calendar.Month.Content = React.createClass({
     
     filterProps: _filterProps,
     
-    _getDate: function(timestamp) {
-        if (timestamp) {
-            return (<span>{moment(timestamp).format("D")}</span>);
-        }
-    },
-    
     _getMonth: function(timestamp, index) {
         var isActive = moment(timestamp).month() == moment(this.props.data.active).month();
         return {
@@ -410,21 +415,17 @@ Calendar.Month.Content = React.createClass({
         
         var month;
         
-        //@TODO : tester si le mois ourant est actif ou non
-        
         var content = this.props.weeks.map(function(week) {
             var cells = week.map(function(timestamp, index) {
-                if (month == undefined && timestamp) {
-                    month = this._getMonth(timestamp, index);
-                }
-            // @TODO : className : prendre en compte le fait d'être en weekEnd ou pas
-            // ajouter ce test à getDayStatus
-                var _props = {
-                    className: _getDayStatus(timestamp, this.props.data),
-                    date: this._getDate(timestamp)
-                }
+                var _props;
+                if (timestamp) {
+                    if (month == undefined) {
+                        month = this._getMonth(timestamp, index);
+                    }
+                    _props = {timestamp: timestamp};
+                } 
                 return (
-                    <td className={_props.className}>{_props.date}</td>
+                    <Calendar.Month.Content.Date {...this.filterProps("Calendar.Month.Content.Date", _props)} />
                 );
             }.bind(this));
             
@@ -440,6 +441,35 @@ Calendar.Month.Content = React.createClass({
             </table>
         );
         
+    }
+});
+
+Calendar.Month.Content.Date = React.createClass({
+
+    _handleClick: function() {
+        this.props.onClick.call(this, {
+            active: this.props.timestamp,
+            type: "Week"
+        });
+    },
+    
+    _getClassName: function() {
+        return _getDayStatus(this.props.timestamp, this.props.data);
+    },
+    
+    _getLabel: function() {
+        return moment(this.props.timestamp).format("D");
+    },
+    
+    render: function() {
+        if (!this.props.timestamp) {
+            return (
+                <td></td>
+            )
+        }
+        return (
+            <td className={this._getClassName}><a onClick={this._handleClick}>{this._getLabel()}</a></td>
+        );
     }
 });
 
@@ -481,12 +511,13 @@ Calendar.Week = React.createClass({
 
         var props = _.omit(this.props, "_views");
         
+        console.log("=>Calendar.Week", _toDateString(props.data.active))
+        
         // @TODO : à mettre dans componentWillMount && componentWillUpdate
         var _getProps = this.filterProps;
         
         var content = _.map(this.props.weeks, function(timestamp, key) {
             var _props = {
-                data: props.data,
                 weeks: _getWeeks(props.data.type, timestamp)
             };
             return (
@@ -582,7 +613,7 @@ Calendar.Breadcrumb = React.createClass({
     },
     
     _getLabel: function() {
-        return moment(this.props.active).format(this.props.format);
+        return moment(this.props.data.active).format(this.props.format);
     },
     
     render: function() {
@@ -611,27 +642,27 @@ Calendar.Menu = React.createClass({
     
     render: function() {
         
-        // @TODO : n'afficher qu'un seul menu pour cette vvue
-        
+        console.log("=>Calendar.Menu", _toDateString(this.props.data.active))
         var commom = [];
         var header, content, footer = "";
         
-        var _props = this.props;
+        var _data = this.props.data;
+        var _weeks = this.props.weeks;
         var _getProps = this.getProps;
         
         header = (function() {
-            return _props.weeks.map(function(week) {
+            return _weeks.map(function(week) {
                 return week.map(function(timestamp) {
                     return (
                         <Calendar.Menu.Header {..._getProps("Calendar.Menu.Header", {timestamp: timestamp})} />
                     );
                 })
             });
-        })();
+        }.bind(this))();
         
-        if (_props.data.type == "Week") {
+        if (_data.type == "Week") {
             content = (function() {
-                return _props.weeks.map(function(week) {
+                return _weeks.map(function(week) {
                     return week.map(function(timestamp, index) {
                         return (
                             <Calendar.Menu.Date {..._getProps("Calendar.Menu.Date", {timestamp: timestamp})} />
@@ -714,7 +745,8 @@ Calendar.Menu.Date = React.createClass({
     
     _handleClick: function() {
         this.props.onClick.call(this, {
-            timestamp: this.props.timestamp
+            active: this.props.timestamp,
+            type: "Week"
         });
     },
     
@@ -743,10 +775,12 @@ Calendar.Menu.Footer = React.createClass({
     },
     
     _getLabel: function() {
-        return moment(this.props.active).format(DATE_FORMAT_ALL);
+        return moment(this.props.data.active).format(DATE_FORMAT_ALL);
     },
     
     render: function() {
+        //@FIXME : il ne devrait pas y avoir d'attibut className
+        console.log("=>Calendar.Menu.Footer", this.props)
         return (
             <td colSpan="7"><h1>{this._getLabel()}</h1></td>
         );
