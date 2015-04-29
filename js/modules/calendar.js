@@ -190,13 +190,12 @@ var _filterProps = function(key, data) {
     
     // Get ChildViews
     var _views = _filter(key, views);
-    
+
     // Separate properties 
     // form MainView to ChildViews
-    var _isViewProps = _views[key] != undefined;
-    if (_isViewProps) {
+    if (_.has(_views, key)) {
         _.extend(data, _views[key]);
-        delete _views[key];
+        _views = _.omit(_views, key);
     }
     
     if (_.isEmpty(_views)) {
@@ -290,6 +289,7 @@ var Calendar = React.createClass({
     
     _getProps: function(props) {
         var _views = {}
+        
         _views["Calendar.Breadcrumb"] = {
             "format": _CalendarFormat("Calendar.Breadcrumb", this.state.type),
             "onClick": this._updateMainView
@@ -511,7 +511,7 @@ Calendar.Week = React.createClass({
 
         var props = _.omit(this.props, "_views");
         
-        console.log("=>Calendar.Week", _toDateString(props.data.active))
+        // console.log("=>Calendar.Week", _toDateString(props.data.active))
         
         // @TODO : à mettre dans componentWillMount && componentWillUpdate
         var _getProps = this.filterProps;
@@ -630,19 +630,18 @@ Calendar.Menu = React.createClass({
     filterProps: _filterProps,
     
     getProps: function(key, data) {
-        var data = data || {};
-        var props = {data: this.props.data};
-        if (props.data.type == "Week") {
-            var data = _.extend(data, {
-                className: _getDayStatus(data.timestamp, props.data)
+        var timestamp = (data) ? data.timestamp : null;
+        
+        if (data && data.timestamp) {
+            _.extend(data, {
+                className: _getDayStatus(timestamp, this.props.data)
             });
         }
-        return this.filterProps(key, _.extend(props, data));
+        
+        return this.filterProps(key, data);
     },
     
     render: function() {
-        
-        console.log("=>Calendar.Menu", _toDateString(this.props.data.active))
         var commom = [];
         var header, content, footer = "";
         
@@ -775,12 +774,10 @@ Calendar.Menu.Footer = React.createClass({
     },
     
     _getLabel: function() {
-        return moment(this.props.data.active).format(DATE_FORMAT_ALL);
+        return moment(this.props.data.active).format(this.props.format);
     },
     
     render: function() {
-        //@FIXME : il ne devrait pas y avoir d'attibut className
-        console.log("=>Calendar.Menu.Footer", this.props)
         return (
             <td colSpan="7"><h1>{this._getLabel()}</h1></td>
         );
