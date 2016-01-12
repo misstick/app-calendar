@@ -83,6 +83,9 @@
             color:inherit;
             font-size: 0.9em;
         }
+        .main-view .breadcrumb:empty {
+            visibility: hidden;
+        }
         .main-view .breadcrumb:before {
             content: "<";
             padding-right: 1em;
@@ -329,4 +332,24 @@
         [data-view="calendar-event"] article {
             padding: 1em 0;
             border-top: solid 1px #ddd;
+        }
+
+
+        /*
+            Mise en page de la vue par années
+        */
+        [data-view="calendar-year"] {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+        [data-view="calendar-year"] table{
+            width: 50%;
+        }
+        [data-view="calendar-year"] tbody{
+            font-size: 0.75em;
         }
