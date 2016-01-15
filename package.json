@@ -1,7 +1,7 @@
 {
-  "name": "test-env-react",
+  "name": "app-calendar",
   "version": "0.0.0",
-  "description": "Example React Architecture",
+  "description": "basic calendar application",
   "main": "js/all.js",
   "dependencies": {
     "react": "^0.13.1",
