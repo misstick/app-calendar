@@ -1,4 +1,4 @@
-Lazyload Grid Component
+Calendar application
 ======
 
 First of all, install React env. :
