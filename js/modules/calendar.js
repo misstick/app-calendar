@@ -21,8 +21,7 @@ var DATE_FORMAT_TEST = "D MM YYYY"
 
 // @TODO : add to Getters
 // @TODO : use this to get Days into Year && Home Views
-var _CalendarWeek = function(data, parent) {
-
+function fetchCalendarDays(data, parent) {
     var result = [];
     var model = _.clone(data);
 
@@ -32,7 +31,7 @@ var _CalendarWeek = function(data, parent) {
         last: getValueOf('end')
     });
 
-    // console.log("(" + model.type + ")", _toDateString(model.first, DATE_FORMAT_TEST), "to", _toDateString(model.last, DATE_FORMAT_TEST));
+//     console.log("(" + model.type + ")", _toDateString(model.first, DATE_FORMAT_TEST), "to", _toDateString(model.last, DATE_FORMAT_TEST));
 
     // @FIXME : 3x la même année
     // @TODO : factoriser les 3 tests ci-dessous
@@ -66,7 +65,7 @@ var _CalendarWeek = function(data, parent) {
     }
     function getChildren(method) {
         if ('day' !== method) {
-            return _CalendarWeek({
+            return fetchCalendarDays({
                     current: day, 
                     type: method
                 }, model);
@@ -76,28 +75,26 @@ var _CalendarWeek = function(data, parent) {
 }
 
 // @TODO : add to Getters
-var getDataRange = function(data) {
-    var result = [];
-    if (data.type == "Week") {
-        var start = moment(data.active).day();
-        result.push(moment(data.active).day(start - 7).valueOf());
-        result.push(data.active);
-        result.push(moment(data.active).day(start + 7).valueOf());
-        
-    } else if (data.type == "Month") {
-        var start = moment(data.active).month();
-        result.push(moment(data.active).month(start - 1).valueOf());
-        result.push(data.active);
-        result.push(moment(data.active).month(start + 1).valueOf());
-        
-    } else if (data.type == "Year") {
+var getCalendarData = function(data) {
+    return _.map(getRange(data), function(timestamp) {
+        return fetchCalendarDays({
+            type: 'year',
+            current: timestamp
+        });
+    });
+
+    function getRange(data) {
+        var result = [];
         var start = moment(data.active).year();
-        result.push(moment(data.active).year(start - 1).valueOf());
+        var step = 3;
+
+        result.push(moment(data.active).year(start - step).valueOf());
         result.push(data.active);
-        result.push(moment(data.active).year(start + 1).valueOf());
-    }
-    return result;
-};
+        result.push(moment(data.active).year(start + step).valueOf());
+
+        return result;
+    };
+}
 
 // @TODO : add to Stores
 var getDOMEvents = function(view, data) {
@@ -325,18 +322,10 @@ var Calendar = React.createClass({
     // },
     
     _getProps: function() {
-
-        var type = this.state.type.toLowerCase();
         var props = {
             data: this.state,
-            weeks: _.map(getDataRange(this.state), function(timestamp) {
-                return getWeeksFromMonth({
-                    type: type,
-                    current: timestamp
-                });
-            })
+            days: getCalendarData(this.state)
         };
-
         return _.extend(props, getDOMEvents(this, this.state));
     },
     
@@ -351,6 +340,7 @@ var Calendar = React.createClass({
 
     render: function() {
         var _props = this._getProps();
+        console.log(_props.days);
         return (        
             React.createElement(Calendar[this.state.type + 's'], _props)
         );
@@ -358,23 +348,7 @@ var Calendar = React.createClass({
 
 });
 
-// Map array and send null 
-// if not current Month
-// _CalendarWeek
-function getWeeksFromMonth(data) {
-    var weeks = _CalendarWeek(data);
-    var callback = data.callback || function(timestamp) { return timestamp };
-
-    function getFullWeeks(models) {
-        return _.map(models, function(timestamp, index) {
-            if (_.isArray(timestamp)) return getFullWeeks(timestamp, index);
-            return callback(timestamp, data);
-        });
-    }
-
-    return getFullWeeks(weeks);
-}
-function getFirstDayFromMonth(array) {
+function getFirstDay(array) {
     return _.first(_.compact(_.flatten(array)));
 }
 // @TODO : le template et la vue transitoire n'existe pas
@@ -388,9 +362,9 @@ Calendar.Years = React.createClass({
         // _toDateString(model.first, DATE_FORMAT_TEST)
         var _getProps = this._getProps;
 
-        var content = _.map(this.props.weeks, function(months) {
+        var content = _.map(this.props.days, function(months) {
             return (
-                <Calendar.Years.Item {..._getProps({ weeks: months })} />
+                <Calendar.Years.Item {..._getProps({ days: months })} />
             );
         });
 
@@ -414,14 +388,14 @@ Calendar.Years.Item = React.createClass({
         var _getProps = this._getProps;
 
         var header = (function(months) {
-            var _timestamp = getFirstDayFromMonth(months);
+            var _timestamp = getFirstDay(months);
             var _year = moment(_timestamp).year();
             return (<h1>{_year}</h1>);
-        })(this.props.weeks);
+        })(this.props.days);
 
-        var content = this.props.weeks.map(function(month) {
+        var content = this.props.days.map(function(month) {
             return (
-                <Calendar.Months.Item {..._getProps({ weeks: month })} />
+                <Calendar.Months.Item {..._getProps({ days: month })} />
             );
         });
         
@@ -448,14 +422,16 @@ Calendar.Months = React.createClass({
         
         var header;
 
-        var content = _.map(this.props.weeks, function(month) {
-            // Display Menu only once
-            if (header == undefined) {
-                header = (<Calendar.Menu {..._getProps({ weeks: getFirstDayFromMonth(month) })} />);
-            }
-            return (
-                <Calendar.Months.Item {..._getProps({ weeks: month })} />
-            );
+        var content = _.map(this.props.days, function(months) {
+            return _.map(months, function(month) {     
+                // Display Menu only once
+                if (header == undefined) {
+                    header = (<Calendar.Menu {..._getProps({ days: getFirstDay(month) })} />);
+                }
+                return (
+                    <Calendar.Months.Item {..._getProps({ days: month })} />
+                );
+            });
         });
         
         return (
@@ -480,7 +456,7 @@ Calendar.Months.Item = React.createClass({
             props.timestamp = timestamp;
         }
         if (name == "Calendar.Month") {
-            var days = _.flatten(this.props.weeks);
+            var days = _.flatten(this.props.days);
             var firstday = _.first(_.compact(days));
             var weekday = moment(firstday).weekday();
             _.extend(props, {
@@ -497,7 +473,7 @@ Calendar.Months.Item = React.createClass({
 
         var _props =  _getProps("Calendar.Month");
         
-        var content = this.props.weeks.map(function(week) {
+        var content = this.props.days.map(function(week) {
             var cells = (week || []).map(function(timestamp, index) {
                 return (
                     <Calendar.Months.Item.Date {..._getProps("Calendar.Months.Item.Date", timestamp)} />
@@ -581,12 +557,7 @@ Calendar.Weeks = React.createClass({
     // et faire hériter ttes les vues de cette méthode
     
     _getProps: function(key, timestamp) {
-        var props = {
-            weeks: _CalendarWeek({
-                current: timestamp
-            })
-        }
-        return _filterProps.call(this, key, props);
+        return _filterProps.call(this, key, { current: timestamp });
     },
     
     render: function() {
@@ -596,7 +567,7 @@ Calendar.Weeks = React.createClass({
         // @TODO : à mettre dans componentWillMount && componentWillUpdate
         var _getProps = this._getProps;
         
-        var content = _.map(this.props.weeks, function(timestamp, key) {
+        var content = _.map(this.props.days, function(timestamp, key) {
             return (
                 <div data-view="calendar-week" style={{width: "33.33%"}} ref={key}>
                     <nav role="navigation">
@@ -653,7 +624,7 @@ Calendar.Weeks.Content = React.createClass({
     render: function() {
         var _getProps = this.getProps;
         
-        var content = this.props.weeks.map(function(day) {
+        var content = this.props.days.map(function(day) {
             return (
                 <Calendar.Weeks.Day {..._getProps(day)} />
             );
@@ -721,7 +692,7 @@ Calendar.Menu = React.createClass({
         
         if (this.props.data.type == "Week") {
             content = (function() {
-                return _weeks.map(function(timestamp) {
+                return _days.map(function(timestamp) {
                     return (
                         <Calendar.Menu.Date {..._getProps("Calendar.Menu.Date", {timestamp: timestamp})} />
                     );
@@ -733,7 +704,7 @@ Calendar.Menu = React.createClass({
             <table data-view="calendar-menu">
                 <thead>
                     <tr>
-                        <Calendar.Menu.Header {..._getProps("Calendar.Menu.Header", {timestamp: this.weeks})} />
+                        <Calendar.Menu.Header {..._getProps("Calendar.Menu.Header", {timestamp: this.days})} />
                     </tr>
                 </thead>
                 <tbody>
