@@ -338,7 +338,7 @@
         /*
             Mise en page de la vue par années
         */
-        [data-view="calendar-year"] {
+        [data-view="calendar-year-content"] {
             display: -webkit-box;
             display: -webkit-flex;
             display: -ms-flexbox;
@@ -347,9 +347,9 @@
             flex-direction: row;
             flex-wrap: wrap;
         }
-        [data-view="calendar-year"] table{
+        [data-view="calendar-year-content"] table{
             width: 50%;
         }
-        [data-view="calendar-year"] tbody{
+        [data-view="calendar-year-content"] tbody{
             font-size: 0.75em;
         }
