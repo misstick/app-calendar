@@ -76,7 +76,7 @@ var _CalendarWeek = function(data, parent) {
 }
 
 // @TODO : add to Getters
-var _CalendarDates = function(data) {
+var getDataRange = function(data) {
     var result = [];
     if (data.type == "Week") {
         var start = moment(data.active).day();
@@ -100,7 +100,7 @@ var _CalendarDates = function(data) {
 };
 
 // @TODO : add to Stores
-var _CalendarChildrenProps = function(view, data) {
+var getDOMEvents = function(view, data) {
     var result = {};
 
     if (data.type == "Week") {
@@ -329,7 +329,7 @@ var Calendar = React.createClass({
         var type = this.state.type.toLowerCase();
         var props = {
             data: this.state,
-            weeks: _.map(_CalendarDates(this.state), function(timestamp) {
+            weeks: _.map(getDataRange(this.state), function(timestamp) {
                 return getWeeksFromMonth({
                     type: type,
                     current: timestamp
@@ -337,7 +337,7 @@ var Calendar = React.createClass({
             })
         };
 
-        return _.extend(props, _CalendarChildrenProps(this, this.state));
+        return _.extend(props, getDOMEvents(this, this.state));
     },
     
     _selectDate: function(data) {
