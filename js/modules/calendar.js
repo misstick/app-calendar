@@ -653,9 +653,7 @@ Calendar.Weeks = React.createClass({
                 return _.map(month, function(week, key) {
                     return (
                         <div data-view="calendar-week" style={{width: "33.33%"}} ref={key}>
-                            <nav role="navigation">
-                                <Calendar.Menu {..._getProps("Calendar.Menu", { days: week} )} />
-                            </nav>
+                            <Calendar.Menu {..._getProps("Calendar.Menu", { days: week} )} />
                             <Calendar.Weeks.Content {..._getProps("Calendar.Weeks.Content", { days: week})} />
                         </div>
                     );
@@ -758,115 +756,120 @@ Calendar.Breadcrumb = React.createClass({
 
 Calendar.Menu = React.createClass({
     
-    getProps: function(key, timestamp) {
-        var props = {
-            className: (timestamp) ? _getDayStatus(timestamp, this.props.data) : null,
-            days: ('Calendar.Menu.Header' === key) ? this.props.days : null
-        };
+    getProps: function(key, props) {
+        var props = props || {};
+        if (props.timestamp) {
+            props.className = _getDayStatus(props.timestamp, this.props.data);
+        }
+        if ('Calendar.Menu.Footer' === key) {
+            // FIXME : à définir en fonction de la journée sélectionnée
+            // qui se fera via un scroll
+            // -> this.props.current
+            props.timestamp = getFirstDay(this.props.days);
+        }
         return _filterProps.call(this, key, props);
     },
     
     render: function() {
-        var content;
+        var header = [];
+        var content = [];
         
         var _getProps = this.getProps;
         
-        if (this.props.data.type == "Week") {
-            content = (this.props.days || []).map(function(timestamp) {
-                return (
-                    <Calendar.Menu.Date {..._getProps("Calendar.Menu.Date", timestamp)} />
-                );
+        if (this.props.data.type === "Week") {
+            _.each(this.props.days, function(timestamp) {
+                header.push((
+                    <Calendar.Menu.Header {..._getProps("Calendar.Menu.Date", { timestamp: timestamp, type: 'date' })} />
+                ));
+                content.push((
+                    <Calendar.Menu.Date {..._getProps("Calendar.Menu.Date", { timestamp: timestamp, type: 'day' })} />
+                ));
             });
         }
 
         return (
-            <table data-view="calendar-menu">
-                <thead>
-                    <tr>
-                        <Calendar.Menu.Header {..._getProps("Calendar.Menu.Header")} />
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        {content}
-                    </tr>
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <Calendar.Menu.Footer {..._getProps("Calendar.Menu.Footer")} />
-                    </tr>
-                </tfoot>
-            </table>
+            <nav role="navigation">
+                <table data-view="calendar-menu">
+                    <Calendar.Menu.Header {..._getProps("Calendar.Menu.Header")} />
+                    <thead>
+                        <tr>
+                            {header}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            {content}
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <Calendar.Menu.Footer {..._getProps("Calendar.Menu.Footer")} />
+                        </tr>
+                    </tfoot>
+                </table>
+            </nav>
         );
     }
 });
 
+
+function setDateAsHeader(props){
+    var method = (props.type === 'date') ? 'dd' : 'D';
+    return moment(props.timestamp).format(method);
+}
 Calendar.Menu.Header = React.createClass({
-    
+
     _handleClick: function() {
-        this.props.onClick.call(this, {
-            timestamp: this.props.timestamp
-        });
+        this.props.onClick.call(this, this.props);
     },
-    
-    _getLabel: function() {
-        return moment(this.props.timestamp).format("dd");
-    },
-    
+
     render: function() {
-        
-        // Empty Days
+        // TODO : Months
+        // -> afficher les jours de la semaine
+
         if (!this.props.timestamp) {
-            return (
-                <th></th>
-            );
+            return (<th></th>);
         }
-        
-        if (this.props.data.type == "Month") {
+
+        if ('Month' === this.props.data.type) {
             return (
-                <th>
-                    {this._getLabel()}
-                </th>
-            );
+                <th>{setDateAsHeader(this.props)}</th>
+            )
         }
-        
+
         return (
-            <th className={this.props.className}>
-                <a onClick={this._handleClick}>{this._getLabel()}</a>
+            <th>
+                <a onClick={this._handleClick}>{setDateAsHeader(this.props)}</a>
             </th>
         );
     }
 });
 
 Calendar.Menu.Date = React.createClass({
-    
-    _getLabel: function() {
-        return moment(this.props.timestamp).date();
-    },
-    
+
     _handleClick: function() {
-        this.props.onClick.call(this, {
-            active: this.props.timestamp,
-            type: "Week"
-        });
+        this.props.onClick.call(this, this.props);
     },
-    
+
     render: function() {
-        
         if (!this.props.timestamp) {
+            return (<th></th>);
+        }
+
+        if ('Month' === this.props.data.type) {
             return (
-                <td></td>
-            );
+                <th>{setDateAsHeader(this.props)}</th>
+            )
         }
 
         return (
-            <td>
-                <a onClick={this._handleClick} className={this.props.className}>{this._getLabel()}</a>
-            </td>
+            <th className={this.props.className}>
+                <a onClick={this._handleClick}>{setDateAsHeader(this.props)}</a>
+            </th>
         );
     }
 });
-
+    
 Calendar.Menu.Footer = React.createClass({
 
     getDefaultProps: function() {
@@ -876,7 +879,7 @@ Calendar.Menu.Footer = React.createClass({
     },
     
     _getLabel: function() {
-        return moment(this.props.data.active).format(this.props.format);
+        return moment(this.props.timestamp).format(this.props.format);
     },
     
     render: function() {
