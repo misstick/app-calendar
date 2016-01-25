@@ -125,13 +125,13 @@ function getViewsProperties(view, data) {
     if ('week' === type) {
         result["Calendar.Breadcrumb"] = {
             "format": DATE_FORMAT_MONTH,
-            "onClick": view._updateMainView
+            "onClick": view.update
         };
         result["Calendar.Menu.Header"] = {
-            "onClick": view._selectDate
+            "onClick": view.update
         };
         result["Calendar.Menu.Date"] = {
-            "onClick": view._selectDate
+            "onClick": view.update
         };
         result["Calendar.Menu.Footer"] = {
             "format": DATE_FORMAT_ALL
@@ -142,13 +142,13 @@ function getViewsProperties(view, data) {
     } else if ('month' === type) {
         result["Calendar.Breadcrumb"] = {
             "format": DATE_FORMAT_YEAR,
-            "onClick": view._updateMainView
+            "onClick": view.update
         };
         result["Calendar.Menu.Footer"] = {
             "format": DATE_FORMAT_MONTH_YEAR
         };
         result["Calendar.Months.Item.Date"] = {
-            "onClick": view._selectDate
+            "onClick": view.update
         };
     }
     return (_.isEmpty(result)) ? null : {_views: result};
@@ -176,14 +176,17 @@ var _CalendarState = function(obj0, obj1) {
 // les données devraient être rechargées toutes les années -3
 // cad que dès que lo'n visionne l'année suivante on charge l'annéeSuivante+3
 
-function getDatesScope(state) {
+function getDatesScope(state, options) {
     var keys = ['week', 'day'];
     var type = state.type.toLowerCase();
+    var options = options || {};
     var result;
 
     // Get the bigger scope needed
     // It will be useless for the back navigation (breadcrumb)
-    ALL_DAYS = getAllDates(state);
+    if (!ALL_DAYS || options.refresh) {
+        ALL_DAYS = getAllDates(state);
+    }
 
     // Return specific scope
     if (_.contains(keys, type)) {
@@ -197,9 +200,9 @@ function getDatesScope(state) {
         var previousDate = getPreviousDate(state);
         var nextDate = getNextDate(state);
 
-        return _compact(_.map(ALL_DAYS, function(year, indexYear) {
-            return _compact(_.map(year, function(month, indexMonth) {
-                return _compact(_.map(month, function(days, indexWeek) {
+        return _compact(_.map(_.clone(ALL_DAYS), function(year) {
+            return _compact(_.map(year, function(month) {
+                return _compact(_.map(month, function(days) {
                     return _compact(_.filter(days, isInner));
                 }));
             }));
@@ -342,7 +345,7 @@ var Calendar = React.createClass({
         return {
             current: date.valueOf(),  // Current Day
             active: date.weekday(2).valueOf(),      // Day visible into the view (scrollTO that day)
-            type: "Week"
+            type: "week"
         };
     },
 
@@ -395,12 +398,8 @@ var Calendar = React.createClass({
         return _.extend(props, getViewsProperties(this, this.state));
     },
     
-    _selectDate: function(data) {
-        console.log("_selectDate", data)
-        this.setState(data);
-    },
-    
-    _updateMainView: function(data) {
+    update: function(data) {
+        data.type = data.type.toLowerCase();
         this.setState(data);
     },
 
