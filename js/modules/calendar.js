@@ -44,11 +44,12 @@ function fetchDates(data, parent) {
     // een début ou fin de tableau
 
     var day = model.first;
-    var method = getChildrenType(model);
+    var type = getChildrenType(model);
+    var method = type + 's';
     while(day.isBefore(model.last)) {
-        var _day = getChildren(method);
+        var _day = getChildren(type);
         result.push(_day);
-        day = day.add(1, method + 's');
+        day = day.add(1, method);
     }
     return result;
 
