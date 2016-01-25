@@ -36,7 +36,7 @@ function fetchDates(data, parent) {
     });
 
 //     console.log("(" + model.type + ")", _toDateString(model.first), "to", _toDateString(model.last));
-
+    
     // @FIXME : 3x la même année
     // @TODO : factoriser les 3 tests ci-dessous
 
@@ -98,24 +98,28 @@ function getAllDates(data) {
     // wathever the view type
     // filter after to get a closer scope
     function getDatesRange(data) {
-        return [
+        return _.flatten([
             getPreviousDate(data),
-            data.value,
+            data.active,
             getNextDate(data)
-        ];
+        ]);
     };
 }
 
 function getPreviousDate(data){
     var method = data.type.toLowerCase();
     var value = moment(data.active)[method]();
-    return moment(data.active)[method](value - STEP).valueOf();
+    return _.sortBy(_.map(_.range(STEP), function getDates(index) {
+        return moment(data.active)[method](value - (index + 1)).valueOf()
+    }));
 }
 
 function getNextDate(data){
     var method = data.type.toLowerCase();
     var value = moment(data.active)[method]();
-    return moment(data.active)[method](value + STEP).valueOf();
+    return _.sortBy(_.map(_.range(STEP), function getDates(index) {
+        return moment(data.active)[method](value + (index + 1)).valueOf()
+    }));
 }
 
 // @TODO : add to Stores
@@ -198,8 +202,8 @@ function getDatesScope(state, options) {
     return ALL_DAYS;
     
     function filterDates(state) {
-        var previousDate = getPreviousDate(state);
-        var nextDate = getNextDate(state);
+        var previousDate = getFirstDay(getPreviousDate(state));
+        var nextDate = getLastDay(getNextDate(state));
 
         return _compact(_.map(_.clone(ALL_DAYS), function(year) {
             return _compact(_.map(year, function(month) {
@@ -223,6 +227,9 @@ function _compact(array){
 }
 function getFirstDay(array) {
     return _.first(_.compact(_.flatten(array)));
+}
+function getLastDay(array) {
+    return _.last(_.compact(_.flatten(array)));
 }
 function getIndexOf(type) {
     return _.indexOf(CALENDAR_TYPE, type) + 1 || -1;
