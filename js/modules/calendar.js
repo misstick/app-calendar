@@ -298,36 +298,36 @@ var _CalendarGoBackData = function(data) {
 }
 
 // @TODO : ajouter dans les getters
-var _filterProps = function(key, data) {
-    var data = _.clone(data || {});
+function _filterProps(key, props) {
+    var props = _.clone(props || {});
     var views = _.clone(this.props._views || {});
-    
-    var _filter = function(key, props) {
-        return _.omit(props, function(_value, _key) {
-            return _key.indexOf(key) == -1;
-        });
-    }
-    
-    // Get ChildViews
-    var _views = _filter(key, views);
+
+    // Get Childrend properties
+    var _views = getChildProps(views, key);
 
     // Separate properties 
     // form MainView to ChildViews
     if (_.has(_views, key)) {
-        _.extend(data, _views[key]);
+        _.extend(props, _views[key]);
         _views = _.omit(_views, key);
     }
-    
+
     if (_.isEmpty(_views)) {
-        return _.extend(data, {
+        return _.extend(props, {
             data: this.props.data
         });
     }
-    
-    return _.extend(data, { 
+
+    return _.extend(props, { 
         _views: _views,
         data: this.props.data
     });
+
+    function getChildProps(props, key) {
+        return _.omit(props, function(_value, _key) {
+            return _key.indexOf(key) == -1;
+        });
+    }
 }
 
 var _scrollTo = function(type) {
