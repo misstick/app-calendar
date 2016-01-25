@@ -220,14 +220,7 @@ function getFirstDay(array) {
     return _.first(_.compact(_.flatten(array)));
 }
 function getIndexOf(type) {
-    var position;
-    _.find(CALENDAR_TYPE, function getIndex(key, index) {
-        if (type === key) {
-            position = index + 1;
-            return true;
-        }
-    });
-    return position;
+    return _.indexOf(CALENDAR_TYPE, type) + 1 || -1;
 }
 
 // @TODO : add to Getters
