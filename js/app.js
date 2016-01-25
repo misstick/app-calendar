@@ -10,7 +10,7 @@
     var date = moment();
 
     React.render(
-        <Calendar type="Week" />,
+        <Calendar type="week" />,
         document.getElementById('calendar-container')
     );
 })();

@@ -118,10 +118,11 @@ function getNextDate(data){
 }
 
 // @TODO : add to Stores
-var getDOMEvents = function(view, data) {
+function getViewsProperties(view, data) {
     var result = {};
+    var type = data.type.toLowerCase();
 
-    if (data.type == "Week") {
+    if ('week' === type) {
         result["Calendar.Breadcrumb"] = {
             "format": DATE_FORMAT_MONTH,
             "onClick": view._updateMainView
@@ -138,7 +139,7 @@ var getDOMEvents = function(view, data) {
         // _views["Calendar.Weeks.Content"] = {
         //     "onScroll": _.debounce(this._handleScroll, SCROLL_DEBOUNCE)
         // };
-    } else if (data.type == "Month") {
+    } else if ('month' === type) {
         result["Calendar.Breadcrumb"] = {
             "format": DATE_FORMAT_YEAR,
             "onClick": view._updateMainView
@@ -222,6 +223,9 @@ function getFirstDay(array) {
 function getIndexOf(type) {
     return _.indexOf(CALENDAR_TYPE, type) + 1 || -1;
 }
+function toCapitalize(string){
+    return string[0].toUpperCase() + string.substring(1, string.length);
+}
 
 // @TODO : add to Getters
 var _getDayStatus = function(timestamp, data) {
@@ -259,35 +263,19 @@ var _getId = function(type, timestamp) {
 }
 
 // @TODO : add to Stores
-var _CalendarGoBackData = function(data) {
-    
-    var result = _.clone(data);
-    
-    // @TODO : use CALENDAR_TYPE
-    // to get previous key
-    switch (data.type) {
-        case "Week":
-            result.type = "Month";
-            result.active = moment(data.active).startOf("month").valueOf();
-            break;
-        
-        // @TODO : vérifier si le calcul est correct
-        case "Month":
-            result.type = "Year";
-            result.active = moment(data.active).startOf("year").valueOf();
-            break;
-        
-        // @TODO : vérifier si le calcul est correct
-        case "Year":
-            result.type = "Home";
-            result.active = moment(data.active).startOf("year").valueOf();
-            break;
-        
-        // @TODO : Est-ce que ce cas est utile ?
-        case "Event":
-            break;
+function getBreadcrumbData(data) {
+    var type = getParentType(data);
+
+    return {
+        type: type,
+        active : moment(data.active).startOf(type).valueOf() || null
+    };
+
+    function getParentType(model) {
+        return _.first(_.compact(_.map(CALENDAR_TYPE, function filterParentType(key, index, array) {
+            return (model.type.toLowerCase() === key) ? array[index-1] : null;
+        })));
     }
-    return result;
 }
 
 // @TODO : ajouter dans les getters
@@ -404,7 +392,7 @@ var Calendar = React.createClass({
             data: this.state,
             days: getDatesScope(this.state)
         };
-        return _.extend(props, getDOMEvents(this, this.state));
+        return _.extend(props, getViewsProperties(this, this.state));
     },
     
     _selectDate: function(data) {
@@ -417,9 +405,10 @@ var Calendar = React.createClass({
     },
 
     render: function() {
-        var _props = this._getProps();
+        var props = this._getProps();
+        var tagName = toCapitalize(this.state.type + 's');
         return (        
-            React.createElement(Calendar[this.state.type + 's'], _props)
+            React.createElement(Calendar[tagName], props)
         );
     }
 
@@ -487,8 +476,8 @@ Calendar.Years.Item = React.createClass({
 
 Calendar.Months = React.createClass({
 
-    _getProps: function(props) {
-        return _filterProps.call(this, 'Calendar.Months', props);
+    _getProps: function(key, props) {
+        return _filterProps.call(this, key, props);
     },
 
     render: function() {
@@ -500,17 +489,17 @@ Calendar.Months = React.createClass({
             return _.map(months, function(month) {     
                 // Display Menu only once
                 if (header == undefined) {
-                    header = (<Calendar.Menu {..._getProps({ days: getFirstDay(month) })} />);
+                    header = (<Calendar.Menu {..._getProps('Calendar.Menu', { days: getFirstDay(month) })} />);
                 }
                 return (
-                    <Calendar.Months.Item {..._getProps({ days: month })} />
+                    <Calendar.Months.Item {..._getProps('Calendar.Months.Item', { days: month })} />
                 );
             });
         });
         
         return (
             <div className="main-view">
-                <Calendar.Breadcrumb {..._getProps()} />
+                <Calendar.Breadcrumb {..._getProps('Calendar.Breadcrumb')} />
                 <nav role="navigation">
                     {header}
                 </nav>
@@ -646,8 +635,8 @@ Calendar.Weeks = React.createClass({
                 return _.map(month, function(week, key) {
                     return (
                         <div data-view="calendar-week" style={{width: "33.33%"}} ref={key}>
-                            <Calendar.Menu {..._getProps("Calendar.Menu", { days: week} )} />
-                            <Calendar.Weeks.Content {..._getProps("Calendar.Weeks.Content", { days: week})} />
+                            <Calendar.Menu {..._getProps('Calendar.Menu', { days: week} )} />
+                            <Calendar.Weeks.Content {..._getProps('Calendar.Weeks.Content', { days: week})} />
                         </div>
                     );
                 });
@@ -658,7 +647,7 @@ Calendar.Weeks = React.createClass({
         // onScroll={_handleScroll}
         return (
             <div className="main-view">
-                <Calendar.Breadcrumb {..._getProps()} />
+                <Calendar.Breadcrumb {..._getProps('Calendar.Breadcrumb')} />
                 <div className="scroll-view" ref="scroll-view" style={{overflow: "auto"}}>
                     <div className="scroller" style={{width: "300%"}}>
                         { content }
@@ -730,7 +719,7 @@ Calendar.Breadcrumb = React.createClass({
     },
     
     _handleClick: function() {
-        var data = _CalendarGoBackData(this.props.data);
+        var data = getBreadcrumbData(this.props.data);
         this.props.onClick.call(this, data);
     },
     
