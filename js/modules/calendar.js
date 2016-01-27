@@ -288,6 +288,12 @@ function updateCalendarView(data) {
     console.log('updateCalendarView', _toDateString(data.active), data);
     CALENDAR.setState(data);
 }
+function gotoDay(timestamp) {
+    updateCalendarView({
+        active: timestamp,
+        type: 'week'
+    });
+}
 var Calendar = React.createClass({
 
     /*
@@ -474,13 +480,6 @@ Calendar.Months.Item = React.createClass({
 });
 
 Calendar.Months.Item.Date = React.createClass({
-
-    handleClick: function() {
-        updateCalendarView({
-            active: this.props.timestamp,
-            type: 'week'
-        });
-    },
     
     getClassName: function() {
         return getDayStatus(this.props);
@@ -491,13 +490,14 @@ Calendar.Months.Item.Date = React.createClass({
     },
     
     render: function() {
-        if (!this.props.timestamp) {
+        var timestamp = this.props.timestamp;
+        if (!timestamp) {
             return (
                 <td></td>
             )
         }
         return (
-            <td><a onClick={this.handleClick} className={this.getClassName()}>{this.getLabel()}</a></td>
+            <td><a onClick={function() { gotoDay(timestamp) }} className={this.getClassName()}>{this.getLabel()}</a></td>
         );
     }
 });
@@ -668,10 +668,6 @@ Calendar.Menu = React.createClass({
 
 Calendar.Menu.List = React.createClass({
 
-    handleClick: function() {
-        updateCalendarView(this.props);
-    },
-
     getClassName: function(timestamp) {
         var props = getProps(this.props, null, {timestamp: timestamp});
         return getDayStatus(props);
@@ -686,7 +682,7 @@ Calendar.Menu.List = React.createClass({
         var content = _.map(this.props.days || [], function (timestamp) {
             return (
                 <th className={this.getClassName(timestamp)}>
-                    <a onClick={this.handleClick}>{this.getLabel(timestamp)}</a>
+                    <a onClick={function() { gotoDay(timestamp) }}>{this.getLabel(timestamp)}</a>
                 </th>
             );
         }.bind(this));
