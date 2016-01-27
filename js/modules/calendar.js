@@ -210,16 +210,16 @@ function toCapitalize(string){
 
 // @TODO : add to Getters
 function getDayStatus(data) {
-    var timestamp = data.timestamp;
-    var data = data || {};
+    var timestamp = (data || {}).timestamp;
+    if (!timestamp) return;
+
+    var data = _.pick(data || {}, 'current', 'active');
     var result = [];
 
     _.find(data, function(value, name) {
-        if ('timestamp' !== name) {
-            var test = isSame(value, timestamp)
-            if (test) result.push(name);
-            return test;
-        }
+        var test = isSame(value, timestamp)
+        if (test) result.push(name);
+        return test;
     });
     if (isWeekEnd(timestamp)) {
         result.push('week-end')
@@ -285,6 +285,7 @@ var CALENDAR;
 // @FIXME : passer par un passage d'événement (Store)
 function updateCalendarView(data) {
     data.type = data.type.toLowerCase();
+    console.log('updateCalendarView', _toDateString(data.active), data);
     CALENDAR.setState(data);
 }
 var Calendar = React.createClass({
@@ -356,7 +357,6 @@ var Calendar = React.createClass({
 
 });
 
-// @TODO : le template et la vue transitoire n'existe pas
 Calendar.Years = React.createClass({
 
     render: function() {
@@ -538,7 +538,7 @@ Calendar.Weeks = React.createClass({
                 return _.map(month, function(week, key) {
                     return (
                         <div data-view="calendar-week" style={{width: "33.33%"}} ref={key}>
-                            <Calendar.Menu  {...getProps(this.props, week)} />
+                            <Calendar.Menu {...getProps(this.props, week)} />
                             <Calendar.Weeks.Content {...getProps(this.props, week)} />
                         </div>
                     );
@@ -582,13 +582,13 @@ Calendar.Weeks.Content = React.createClass({
     },
     
     render: function() {
-        var props = _.clone(this.props);
         var content = (this.props.days || []).map(function(day) {
-            var status = getDayStatus(_.extend(props, {timestamp: day}));
+            var props = getProps(this.props, null, {timestamp: day});
+            var status = getDayStatus(props);
             return (
                 <Calendar.Weeks.Day timestamp={day} status={status} />
             );
-        });
+        }.bind(this));
         
         // onScroll={this.props.onScroll}
         // var _handleScroll = _.debounce(this._handleScroll, SCROLL_DEBOUNCE);
@@ -603,7 +603,6 @@ Calendar.Weeks.Content = React.createClass({
         
     }
 });
-
 
 Calendar.Breadcrumb = React.createClass({
     handleClick: function() {
@@ -627,55 +626,38 @@ Calendar.Breadcrumb = React.createClass({
 
 Calendar.Menu = React.createClass({
     render: function() {
-        var header = [];
-        var content = [];
-        var props = _.clone(this.props);
-        
-        if ('week' === props.type.toLowerCase()) {
-            _.each(props.days, function(timestamp) {
-                _.extend(props, {timestamp : timestamp});
-
-                var className = getDayStatus(props);
-                header.push((
-                    <Calendar.Menu.Header {...getProps(props, null, { 
-                            type: 'date',
-                            timestamp: timestamp,
-                            className: className
-                        })} />
-                ));
-                content.push((
-                    <Calendar.Menu.Date {...getProps(props, null, { 
-                            type: 'day',
-                            timestamp: timestamp,
-                            className: className
-                        })} />
-                ));
-            });
+        if ('week' !== this.props.type.toLowerCase()) {
+            return (
+                <nav role="navigation">
+                    <table data-view="calendar-menu">
+                        <thead></thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr>
+                                <Calendar.Menu.Current {...this.props} />
+                            </tr>
+                        </tfoot>
+                    </table>
+                </nav>
+            );
         }
-        
-        // FIXME : à définir en fonction de la journée sélectionnée
-        // qui se fera via un scroll
-        // -> this.props.current
-        var footerProps = getProps(this.props, null, { 
-            timestamp: getFirstDay(this.props.days)
-        });
 
         return (
             <nav role="navigation">
                 <table data-view="calendar-menu">
                     <thead>
                         <tr>
-                            {header}
+                            <Calendar.Menu.List {...getProps(this.props, null, {type: 'date'})} />
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            {content}
+                            <Calendar.Menu.List {...getProps(this.props, null, {type: 'day'})} />
                         </tr>
                     </tbody>
                     <tfoot>
                         <tr>
-                            <Calendar.Menu.Footer {...footerProps} />
+                            <Calendar.Menu.Current {...this.props} />
                         </tr>
                     </tfoot>
                 </table>
@@ -684,64 +666,36 @@ Calendar.Menu = React.createClass({
     }
 });
 
-
-function setDateAsHeader(props){
-    var method = (props.type === 'date') ? 'dd' : 'D';
-    return moment(props.timestamp).format(method);
-}
-Calendar.Menu.Header = React.createClass({
+Calendar.Menu.List = React.createClass({
 
     handleClick: function() {
         updateCalendarView(this.props);
     },
 
-    render: function() {
-        // TODO : Months
-        // -> afficher les jours de la semaine
-        if (!this.props.timestamp) {
-            return (<th></th>);
-        }
+    getClassName: function(timestamp) {
+        var props = getProps(this.props, null, {timestamp: timestamp});
+        return getDayStatus(props);
+    },
 
-        if ('Month' === this.props.type) {
-            return (
-                <th>{setDateAsHeader(this.props)}</th>
-            )
-        }
-
-        return (
-            <th>
-                <a onClick={this.handleClick}>{setDateAsHeader(this.props)}</a>
-            </th>
-        );
-    }
-});
-
-Calendar.Menu.Date = React.createClass({
-
-    handleClick: function() {
-        updateCalendarView(this.props);
+    getLabel: function(timestamp) {
+        var format = ('date' === this.props.type.toLowerCase()) ? 'dd' : 'D';
+        return moment(timestamp).format(format);
     },
 
     render: function() {
-        if (!this.props.timestamp) {
-            return (<th></th>);
-        }
-
-        if ('Month' === this.props.type) {
+        var content = _.map(this.props.days || [], function (timestamp) {
             return (
-                <th>{setDateAsHeader(this.props)}</th>
-            )
-        }
+                <th className={this.getClassName(timestamp)}>
+                    <a onClick={this.handleClick}>{this.getLabel(timestamp)}</a>
+                </th>
+            );
+        }.bind(this));
 
-        return (
-            <th className={this.props.className}>
-                <a onClick={this.handleClick}>{setDateAsHeader(this.props)}</a>
-            </th>
-        );
+        return (<th>{content}</th>);
     }
 });
     
-Calendar.Menu.Footer = React.createClass({
+Calendar.Menu.Current = React.createClass({
 
     getDefaultProps: function() {
         return {
@@ -750,7 +704,8 @@ Calendar.Menu.Footer = React.createClass({
     },
     
     getLabel: function() {
-        return moment(this.props.timestamp).format(this.props.format);
+        var timestamp = getFirstDay(this.props.days);
+        return moment(timestamp).format(this.props.format);
     },
     
     render: function() {
