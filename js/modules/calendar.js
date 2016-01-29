@@ -373,7 +373,7 @@ Calendar.Years = React.createClass({
         }.bind(this));
 
         return (
-            <div data-view="calendar-years" className="main-view">
+            <div data-view="calendar-years" className="main-view scroll-view">
                 <div className="scroll-view" ref="scroll-view">
                     {content}
                 </div>
@@ -427,7 +427,7 @@ Calendar.Months = React.createClass({
         }.bind(this));
         
         return (
-            <div className="main-view">
+            <div className="main-view scroll-view">
                 <Calendar.Breadcrumb {...this.props} />
                 <nav role="navigation">
                     {header}
@@ -537,7 +537,7 @@ Calendar.Weeks = React.createClass({
             return _.map(year, function(month) {
                 return _.map(month, function(week, key) {
                     return (
-                        <div data-view="calendar-week" style={{width: "33.33%"}} ref={key}>
+                        <div className="week-container" ref={key}>
                             <Calendar.Menu {...getProps(this.props, week)} />
                             <Calendar.Weeks.Content {...getProps(this.props, week)} />
                         </div>
@@ -549,12 +549,10 @@ Calendar.Weeks = React.createClass({
         // var _handleScroll = _.debounce(this._handleScroll, SCROLL_DEBOUNCE);
         // onScroll={_handleScroll}
         return (
-            <div className="main-view">
+            <div className="main-view scroll-view">
                 <Calendar.Breadcrumb {...this.props} />
-                <div className="scroll-view" ref="scroll-view" style={{overflow: "auto"}}>
-                    <div className="scroller" style={{width: "300%"}}>
-                        { content }
-                    </div>
+                <div className="weeks-container">
+                    { content }
                 </div>
             </div>
         );
@@ -594,10 +592,8 @@ Calendar.Weeks.Content = React.createClass({
         // var _handleScroll = _.debounce(this._handleScroll, SCROLL_DEBOUNCE);
         // onScroll={_handleScroll}
         return (
-            <div className="scroll-view" ref="scroll-view" style={{height: 300}}>
-                <div className="scroller" style={{width: "700%"}}>
-                    { content }
-                </div>
+            <div className="week-content" ref="calendar-week" style={{height: 300}}>
+                { content }
             </div>
         );
         
