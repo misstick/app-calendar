@@ -14,10 +14,11 @@
             flex-direction: row;
             flex-wrap: nowrap;
         }
+
       </style>
   </head>
   <body>
-      
+
         <div data-view="calendar-weeks" class="main-view scroll-view">
             <input type="text" name="calendar-week-uri" value="/2015-04-06" readonly="readonly" class="uri-template" />
                 <nav role="navigation">
@@ -915,7 +916,7 @@
                               </div>
           </div>
           </div>
-  
+
           <div data-view="calendar-months" class="main-view scroll-view">
 
               <input type="text" name="calendar-week-uri" value="/2015-04" readonly="readonly" class="uri-template" />
@@ -3188,7 +3189,7 @@
                 </article>
             </div>
         </div>
-  
+
         <div id="event-edit-view" class="main-view scroll-view">
             <input type="text" name="calendar-week-uri" value="/2015-04-06/EventName-timestamp/edit" readonly="readonly" class="uri-template" />
             <nav role="navigation">
@@ -3200,16 +3201,16 @@
                     <input type="text" name="event-name" placeholder="Nom de l'&eacute;v&eacute;nement" value="" />
                     <input type="text" name="event-address" placeholder="Adresse" value="" />
                     <input type="text" name="event-city" placeholder="Ville, Pays" value="" />
-                    
+
                     <textarea name="description" placeholder="Description"></textarea>
-                    
-<!-- 
-                    @TODO : générer le calendrier dans ce select x2 
+
+<!--
+                    @TODO : générer le calendrier dans ce select x2
                     @value: timestamp de la date concernée (date + heure)
                     @libelle: le jour et l'heure choisie
                     -->
                     <p data-view="form-row">
-                       <label for="date-start">Commence</label> 
+                       <label for="date-start">Commence</label>
                        <input type="text" name="date-start" value="8/4 12:00" data-select-view="#date-end-select" />
                     </p>
                     <p id="date-start-select" data-view="form-row" class="select-date">
@@ -3276,7 +3277,7 @@
                         </select>
                     </p>
                     <p data-view="form-row">
-                       <label for="date-end">Se termine</label> 
+                       <label for="date-end">Se termine</label>
                        <input type="text" name="date-end" value="8/4 14:00" data-select-view="#date-end-select" />
                     </p>
                     <p id="date-end-select" data-view="form-row" class="select-date">
